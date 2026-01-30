@@ -66,7 +66,16 @@ export default function IndustrialUI({
 
         <nav className="flex-1 px-4 flex flex-col gap-6 overflow-y-auto custom-scrollbar">
           <div>
-            <p className="px-3 text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Active Nodes</p>
+            <div className="flex items-center justify-between px-3 mb-2">
+                <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Active Nodes</p>
+                <button
+                    onClick={onOpenSettings}
+                    className="text-slate-400 hover:text-[#137fec] transition-colors"
+                    title="Configure Servers"
+                >
+                    <span className="material-symbols-outlined text-[16px]">add</span>
+                </button>
+            </div>
             <div className="flex flex-col gap-1">
               {mcpServers.map(server => (
                 <div
@@ -92,7 +101,12 @@ export default function IndustrialUI({
                 </div>
               ))}
               {mcpServers.length === 0 && (
-                 <div className="px-3 py-2 text-xs text-slate-500 italic">No servers configured</div>
+                 <div
+                    onClick={onOpenSettings}
+                    className="px-3 py-2 text-xs text-slate-500 italic hover:text-[#137fec] cursor-pointer transition-colors"
+                 >
+                    No servers configured. Click to add +
+                 </div>
               )}
             </div>
           </div>
