@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Industrial Automation Command Center</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #233648;
+            border-radius: 10px;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display">
+<div class="flex h-screen overflow-hidden">
+<!-- Sidebar Navigation -->
+<aside class="w-64 flex flex-col border-r border-slate-200 dark:border-[#233648] bg-background-light dark:bg-background-dark">
+<div class="p-6 flex items-center gap-3">
+<div class="size-8 bg-primary rounded flex items-center justify-center text-white">
+<span class="material-symbols-outlined">terminal</span>
+</div>
+<div>
+<h1 class="text-sm font-bold tracking-tight uppercase">Command Center</h1>
+<p class="text-[10px] text-slate-500 dark:text-[#92adc9] uppercase font-medium">Automation OS v2.4</p>
+</div>
+</div>
+<nav class="flex-1 px-4 flex flex-col gap-6 overflow-y-auto custom-scrollbar">
+<div>
+<p class="px-3 text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Active Nodes</p>
+<div class="flex flex-col gap-1">
+<div class="flex items-center justify-between px-3 py-2 rounded-lg bg-primary/10 text-primary border border-primary/20 cursor-pointer">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[20px]">hard_drive</span>
+<span class="text-sm font-medium">Server-Alpha-01</span>
+</div>
+<div class="size-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]"></div>
+</div>
+<div class="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-[#233648] transition-colors cursor-pointer">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[20px] text-slate-400">hard_drive</span>
+<span class="text-sm font-medium">Server-Beta-02</span>
+</div>
+<div class="size-2 rounded-full bg-green-500/50"></div>
+</div>
+</div>
+</div>
+<div>
+<p class="px-3 text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Automation Tools</p>
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-[#233648] transition-colors cursor-pointer">
+<span class="material-symbols-outlined text-[20px] text-slate-400">settings_input_component</span>
+<p class="text-sm font-medium leading-normal">PLCs</p>
+</div>
+<div class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-[#233648] transition-colors cursor-pointer">
+<span class="material-symbols-outlined text-[20px] text-slate-400">sensors</span>
+<p class="text-sm font-medium leading-normal">Sensors</p>
+</div>
+<div class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-[#233648] transition-colors cursor-pointer">
+<span class="material-symbols-outlined text-[20px] text-slate-400">account_tree</span>
+<p class="text-sm font-medium leading-normal">Logic Controllers</p>
+</div>
+</div>
+</div>
+</nav>
+<div class="p-4 border-t border-slate-200 dark:border-[#233648] flex flex-col gap-1">
+<div class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-[#233648] transition-colors cursor-pointer">
+<span class="material-symbols-outlined text-[20px] text-slate-400">help</span>
+<p class="text-sm font-medium">Support</p>
+</div>
+<div class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-[#233648] transition-colors cursor-pointer">
+<span class="material-symbols-outlined text-[20px] text-slate-400">receipt_long</span>
+<p class="text-sm font-medium">System Logs</p>
+</div>
+<div class="mt-2 flex items-center gap-3 px-3 py-2">
+<div class="size-8 rounded-full bg-slate-200 dark:bg-[#233648] bg-center bg-cover" data-alt="Operator profile picture" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCuUrEer4dvVNbgvc6ZM54_gU09d90OAplFnATZ8JcO-KBQhB_Ceerm7bcoI55OYtDIx4m5PPuCkw8csjI-3fniq_dBGTwjZZ-zQCeFh7qLiNY1-qgFeTqm-xCgyefDp7pVaJVCe6CK_GxsXOmM1qeDmlsBAJlTJLJCQwjz_hwlTnxbZkAC0XKeSX2YhwqShvfci6mCLRm0sterSE5zMyeWdscoUIOvqPQ9dCIYP-8ICzxqJ_aNvCKhwQEDGAUc4TVRlKjm1cC-gV0n')"></div>
+<div class="flex-1 min-w-0">
+<p class="text-xs font-bold truncate">Operator 042</p>
+<p class="text-[10px] text-slate-500">Shift Active</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col relative bg-background-light dark:bg-background-dark">
+<!-- Top Header Stats -->
+<header class="flex items-center justify-between px-8 py-4 border-b border-slate-200 dark:border-[#233648]">
+<div class="flex gap-8">
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">CPU Load</span>
+<div class="flex items-center gap-2">
+<span class="text-lg font-bold font-mono">14%</span>
+<span class="text-[10px] font-medium text-orange-500">-2%</span>
+</div>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Connectivity</span>
+<div class="flex items-center gap-2">
+<span class="text-lg font-bold font-mono">12ms</span>
+<span class="text-[10px] font-medium text-green-500">+1%</span>
+</div>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Temperature</span>
+<div class="flex items-center gap-2">
+<span class="text-lg font-bold font-mono">42°C</span>
+<span class="text-[10px] font-medium text-orange-500">-1%</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<button class="p-2 rounded hover:bg-slate-100 dark:hover:bg-[#233648] transition-colors relative">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+<span class="absolute top-2 right-2 size-2 bg-primary rounded-full border-2 border-background-light dark:border-background-dark"></span>
+</button>
+<button class="p-2 rounded hover:bg-slate-100 dark:hover:bg-[#233648] transition-colors">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+</button>
+</div>
+</header>
+<!-- Chat / Message History -->
+<div class="flex-1 overflow-y-auto px-8 py-6 custom-scrollbar space-y-6">
+<!-- System Message -->
+<div class="flex gap-4 max-w-4xl mx-auto">
+<div class="size-10 rounded-lg bg-slate-200 dark:bg-[#233648] flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-primary">smart_toy</span>
+</div>
+<div class="flex flex-col gap-1.5 pt-1">
+<div class="flex items-center gap-3">
+<p class="text-sm font-bold">Automation System</p>
+<p class="text-[11px] text-slate-400 font-medium uppercase">10:30 AM</p>
+</div>
+<div class="text-slate-600 dark:text-slate-300 text-sm leading-relaxed max-w-2xl">
+                            All systems nominal. 48 sensors reporting active data. Primary PLC sequence ready for instructions.
+                            Diagnostic reports no critical failures in the last 24h.
+                        </div>
+</div>
+</div>
+<!-- Operator Message -->
+<div class="flex gap-4 max-w-4xl mx-auto justify-end">
+<div class="flex flex-col gap-1.5 pt-1 items-end">
+<div class="flex items-center gap-3">
+<p class="text-[11px] text-slate-400 font-medium uppercase text-right">10:32 AM</p>
+<p class="text-sm font-bold">Operator</p>
+</div>
+<div class="bg-primary text-white rounded-xl rounded-tr-none px-4 py-3 text-sm leading-relaxed shadow-lg shadow-primary/10 max-w-lg">
+                            Increase temperature threshold on Sensor B by 5% and run a diagnostic on PLC-04. Verify current pressure levels before executing.
+                        </div>
+</div>
+<div class="size-10 rounded-lg bg-slate-800 dark:bg-slate-700 flex items-center justify-center shrink-0 overflow-hidden border border-slate-600">
+<div class="w-full h-full bg-center bg-cover" data-alt="Operator avatar" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCCv6_4DYhyM0lncGEWtMuY-YliYH60dBScym1GPGrWBGznsVhQJwjj92VoePVchEx0R5URrz83CF_KxsyWVXTIO-uDF4Cw3c_SJYJtOw16_zyF6C3S2BwExWsUNSpeXObmHFkgrAdqEencBAf0iM40Pg92H1N9U9Vqq-pLTvSeHWlPss5xTKh6Zl8A6h_XgdyAKou541_DJwblgOWqPRXhbdYXMwE_kK9JMekBUfd4QfBnurmfu4VjJm0sZYE3_POdlBoDyCPYtzAC')"></div>
+</div>
+</div>
+<!-- System Response -->
+<div class="flex gap-4 max-w-4xl mx-auto">
+<div class="size-10 rounded-lg bg-slate-200 dark:bg-[#233648] flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-primary">smart_toy</span>
+</div>
+<div class="flex flex-col gap-1.5 pt-1">
+<div class="flex items-center gap-3">
+<p class="text-sm font-bold">Automation System</p>
+<p class="text-[11px] text-slate-400 font-medium uppercase">10:32 AM</p>
+</div>
+<div class="text-slate-600 dark:text-slate-300 text-sm leading-relaxed max-w-2xl space-y-3">
+<p>Executing requested sequence:</p>
+<div class="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-lg p-3 font-mono text-xs space-y-1">
+<div class="flex justify-between">
+<span class="text-slate-500">1. Reading Sensor B:</span>
+<span class="text-green-500">SUCCESS [Value: 81°C]</span>
+</div>
+<div class="flex justify-between">
+<span class="text-slate-500">2. Updating Threshold:</span>
+<span class="text-green-500">COMPLETED [New: 85°C]</span>
+</div>
+<div class="flex justify-between">
+<span class="text-slate-500">3. PLC-04 Diagnostic:</span>
+<span class="text-primary">RUNNING...</span>
+</div>
+<div class="flex justify-between pt-1 border-t border-slate-200 dark:border-slate-800 mt-1">
+<span class="text-slate-500">System Pressure:</span>
+<span>2.4 bar [Nominal]</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Command Input Field -->
+<div class="p-8 pt-0">
+<div class="max-w-4xl mx-auto">
+<div class="relative group">
+<textarea class="w-full bg-white dark:bg-[#1a2632] border border-slate-200 dark:border-[#324d67] rounded-xl px-4 py-4 pr-16 focus:ring-1 focus:ring-primary focus:border-primary text-sm placeholder-slate-400 dark:placeholder-slate-500 resize-none transition-all shadow-xl shadow-black/5" placeholder="Type an industrial command or ask for status..." rows="1"></textarea>
+<div class="absolute right-3 bottom-3 flex gap-2">
+<button class="p-2 bg-primary text-white rounded-lg hover:bg-blue-600 transition-colors shadow-lg shadow-primary/30 flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">send</span>
+</button>
+</div>
+</div>
+<div class="mt-3 flex items-center justify-between px-2">
+<div class="flex gap-4">
+<button class="flex items-center gap-1.5 text-[11px] font-bold text-slate-400 hover:text-primary transition-colors uppercase tracking-widest">
+<span class="material-symbols-outlined text-[16px]">attach_file</span>
+                                Attach Logic
+                            </button>
+<button class="flex items-center gap-1.5 text-[11px] font-bold text-slate-400 hover:text-primary transition-colors uppercase tracking-widest">
+<span class="material-symbols-outlined text-[16px]">mic</span>
+                                Voice Cmd
+                            </button>
+</div>
+<p class="text-[10px] text-slate-400 italic">Press Enter to dispatch, Shift+Enter for new line</p>
+</div>
+</div>
+</div>
+<!-- Background Gradient Overlay (Minimalist Claude style) -->
+<div class="absolute inset-0 pointer-events-none opacity-5 dark:opacity-[0.03] bg-gradient-to-tr from-primary via-transparent to-transparent"></div>
+</main>
+</div>
+</body></html>

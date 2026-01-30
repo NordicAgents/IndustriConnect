@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ThemeProvider } from './components/ThemeProvider';
-import Sidebar from './components/Sidebar';
-import ChatPanel from './components/ChatPanel';
+import IndustrialUI from './components/IndustrialUI';
 import MCPServerConfigPanel from './components/MCPServerConfig';
 import {
   ChatMessage,
@@ -104,12 +103,6 @@ function AppContent() {
   useEffect(() => {
     saveOllamaConfig(ollamaConfig);
   }, [ollamaConfig]);
-
-  const handleSelectSession = (sessionId: string | null) => {
-    setSelectedSessionId(sessionId);
-    // In this simplified UI we clear messages when switching sessions.
-    setMessages([]);
-  };
 
   // MCP Server handlers
   const handleMCPConnect = async (serverId: string) => {
@@ -233,26 +226,15 @@ function AppContent() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
-      <Sidebar
-        sessions={sessions}
-        selectedSessionId={selectedSessionId}
-        onSelectSession={handleSelectSession}
-        mcpServers={mcpServers}
-        onMCPConnect={handleMCPConnect}
-        onMCPDisconnect={handleMCPDisconnect}
-        onMCPConfigOpen={() => setShowMCPConfig(true)}
-      />
-      <ChatPanel
+    <>
+      <IndustrialUI
         messages={messages}
         onSendMessage={handleSendMessage}
         isLoading={isLoading}
-        chatBackend={chatBackend}
-        onChatBackendChange={setChatBackend}
-        cloudLLMConfig={cloudLLMConfig}
-        onCloudLLMConfigChange={setCloudLLMConfig}
-        ollamaConfig={ollamaConfig}
-        onOllamaConfigChange={setOllamaConfig}
+        mcpServers={mcpServers}
+        onMCPConnect={handleMCPConnect}
+        onMCPDisconnect={handleMCPDisconnect}
+        onOpenSettings={() => setShowMCPConfig(true)}
       />
       {showMCPConfig && (
         <MCPServerConfigPanel
@@ -261,7 +243,7 @@ function AppContent() {
           onClose={() => setShowMCPConfig(false)}
         />
       )}
-    </div>
+    </>
   );
 }
 
