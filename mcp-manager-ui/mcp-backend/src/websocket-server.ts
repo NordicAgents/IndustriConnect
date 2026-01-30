@@ -16,16 +16,21 @@ export class MCPWebSocketServer {
     private wss: WebSocketServer;
     private mcpManager: MCPServerManager;
 
-    constructor(port: number) {
-        this.wss = new WebSocketServer({ port });
+    constructor(serverOrPort: any) {
+        if (typeof serverOrPort === 'number') {
+             this.wss = new WebSocketServer({ port: serverOrPort });
+             console.log(`[WS] WebSocket server started on port ${serverOrPort}`);
+        } else {
+             this.wss = new WebSocketServer({ server: serverOrPort });
+             console.log(`[WS] WebSocket server attached to HTTP server`);
+        }
+
         this.mcpManager = new MCPServerManager();
 
         this.wss.on('connection', (ws) => {
             console.log('[WS] Client connected');
             this.handleConnection(ws);
         });
-
-        console.log(`[WS] WebSocket server started on port ${port}`);
     }
 
     private handleConnection(ws: WebSocket) {
