@@ -55,11 +55,11 @@ export default function IndustrialUI({
       {/* Sidebar Navigation */}
       <aside className="w-64 flex flex-col border-r border-slate-200 dark:border-[#233648] bg-[#f6f7f8] dark:bg-[#101922]">
         <div className="p-6 flex items-center gap-3">
-          <div className="size-8 bg-[#137fec] rounded flex items-center justify-center text-white">
+          <div className="size-8 bg-slate-900 dark:bg-slate-100 rounded flex items-center justify-center text-white dark:text-slate-900">
             <span className="material-symbols-outlined">terminal</span>
           </div>
           <div>
-            <h1 className="text-sm font-bold tracking-tight uppercase">Command Center</h1>
+            <h1 className="text-sm font-bold tracking-tight uppercase">IndustriConnect</h1>
             <p className="text-[10px] text-slate-500 dark:text-[#92adc9] uppercase font-medium">Automation OS v2.4</p>
           </div>
         </div>
@@ -70,7 +70,7 @@ export default function IndustrialUI({
                 <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Active Nodes</p>
                 <button
                     onClick={onOpenSettings}
-                    className="text-slate-400 hover:text-[#137fec] transition-colors"
+                    className="text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
                     title="Configure Servers"
                 >
                     <span className="material-symbols-outlined text-[16px]">add</span>
@@ -83,7 +83,7 @@ export default function IndustrialUI({
                   onClick={() => server.status === 'connected' ? onMCPDisconnect(server.id) : onMCPConnect(server.id)}
                   className={`flex items-center justify-between px-3 py-2 rounded-lg transition-colors cursor-pointer ${
                     server.status === 'connected'
-                      ? 'bg-[#137fec]/10 text-[#137fec] border border-[#137fec]/20'
+                      ? 'bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-700'
                       : 'hover:bg-slate-100 dark:hover:bg-[#233648] text-slate-500'
                   }`}
                 >
@@ -103,29 +103,11 @@ export default function IndustrialUI({
               {mcpServers.length === 0 && (
                  <div
                     onClick={onOpenSettings}
-                    className="px-3 py-2 text-xs text-slate-500 italic hover:text-[#137fec] cursor-pointer transition-colors"
+                    className="px-3 py-2 text-xs text-slate-500 italic hover:text-slate-900 dark:hover:text-white cursor-pointer transition-colors"
                  >
                     No servers configured. Click to add +
                  </div>
               )}
-            </div>
-          </div>
-
-          <div>
-            <p className="px-3 text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Automation Tools</p>
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-[#233648] transition-colors cursor-pointer opacity-70">
-                <span className="material-symbols-outlined text-[20px] text-slate-400">settings_input_component</span>
-                <p className="text-sm font-medium leading-normal">PLCs</p>
-              </div>
-              <div className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-[#233648] transition-colors cursor-pointer opacity-70">
-                <span className="material-symbols-outlined text-[20px] text-slate-400">sensors</span>
-                <p className="text-sm font-medium leading-normal">Sensors</p>
-              </div>
-              <div className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-[#233648] transition-colors cursor-pointer opacity-70">
-                <span className="material-symbols-outlined text-[20px] text-slate-400">account_tree</span>
-                <p className="text-sm font-medium leading-normal">Logic Controllers</p>
-              </div>
             </div>
           </div>
         </nav>
@@ -181,7 +163,7 @@ export default function IndustrialUI({
           <div className="flex items-center gap-3">
             <button className="p-2 rounded hover:bg-slate-100 dark:hover:bg-[#233648] transition-colors relative">
               <span className="material-symbols-outlined text-[20px]">notifications</span>
-              <span className="absolute top-2 right-2 size-2 bg-[#137fec] rounded-full border-2 border-[#f6f7f8] dark:border-[#101922]"></span>
+              <span className="absolute top-2 right-2 size-2 bg-slate-900 dark:bg-white rounded-full border-2 border-[#f6f7f8] dark:border-[#101922]"></span>
             </button>
             <button
                 onClick={onOpenSettings}
@@ -205,7 +187,7 @@ export default function IndustrialUI({
                 <div key={msg.id} className={`flex gap-4 max-w-4xl mx-auto ${msg.role === 'user' ? 'justify-end' : ''}`}>
                     {msg.role !== 'user' && (
                         <div className="size-10 rounded-lg bg-slate-200 dark:bg-[#233648] flex items-center justify-center shrink-0">
-                            <span className="material-symbols-outlined text-[#137fec]">smart_toy</span>
+                            <span className="material-symbols-outlined text-slate-700 dark:text-slate-300">smart_toy</span>
                         </div>
                     )}
 
@@ -226,7 +208,7 @@ export default function IndustrialUI({
 
                         <div className={`text-sm leading-relaxed max-w-2xl ${
                             msg.role === 'user'
-                                ? 'bg-[#137fec] text-white rounded-xl rounded-tr-none px-4 py-3 shadow-lg shadow-[#137fec]/10 max-w-lg'
+                                ? 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white rounded-xl rounded-tr-none px-4 py-3 shadow-lg shadow-black/5 max-w-lg'
                                 : 'text-slate-600 dark:text-slate-300 space-y-3'
                         }`}>
                            {msg.content}
@@ -271,7 +253,7 @@ export default function IndustrialUI({
             {isLoading && (
                  <div className="flex gap-4 max-w-4xl mx-auto">
                     <div className="size-10 rounded-lg bg-slate-200 dark:bg-[#233648] flex items-center justify-center shrink-0">
-                        <span className="material-symbols-outlined text-[#137fec]">smart_toy</span>
+                        <span className="material-symbols-outlined text-slate-700 dark:text-slate-300">smart_toy</span>
                     </div>
                     <div className="flex flex-col gap-1.5 pt-1">
                         <div className="flex items-center gap-3">
@@ -294,7 +276,7 @@ export default function IndustrialUI({
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                className="w-full bg-white dark:bg-[#1a2632] border border-slate-200 dark:border-[#324d67] rounded-xl px-4 py-4 pr-16 focus:ring-1 focus:ring-[#137fec] focus:border-[#137fec] text-sm placeholder-slate-400 dark:placeholder-slate-500 resize-none transition-all shadow-xl shadow-black/5 text-slate-900 dark:text-white"
+                className="w-full bg-white dark:bg-[#1a2632] border border-slate-200 dark:border-[#324d67] rounded-xl px-4 py-4 pr-16 focus:ring-1 focus:ring-slate-400 focus:border-slate-400 text-sm placeholder-slate-400 dark:placeholder-slate-500 resize-none transition-all shadow-xl shadow-black/5 text-slate-900 dark:text-white"
                 placeholder="Type an industrial command or ask for status..."
                 rows={1}
               />
@@ -302,7 +284,7 @@ export default function IndustrialUI({
                 <button
                     onClick={handleSend}
                     disabled={isLoading || !input.trim()}
-                    className="p-2 bg-[#137fec] text-white rounded-lg hover:bg-blue-600 transition-colors shadow-lg shadow-[#137fec]/30 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="p-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-lg hover:opacity-90 transition-opacity shadow-lg shadow-black/10 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <span className="material-symbols-outlined text-[20px]">send</span>
                 </button>
@@ -310,11 +292,11 @@ export default function IndustrialUI({
             </div>
             <div className="mt-3 flex items-center justify-between px-2">
               <div className="flex gap-4">
-                <button className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400 hover:text-[#137fec] transition-colors uppercase tracking-widest">
+                <button className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors uppercase tracking-widest">
                   <span className="material-symbols-outlined text-[16px]">attach_file</span>
                   Attach Logic
                 </button>
-                <button className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400 hover:text-[#137fec] transition-colors uppercase tracking-widest">
+                <button className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors uppercase tracking-widest">
                   <span className="material-symbols-outlined text-[16px]">mic</span>
                   Voice Cmd
                 </button>
@@ -325,7 +307,7 @@ export default function IndustrialUI({
         </div>
 
         {/* Background Gradient Overlay (Minimalist Claude style) */}
-        <div className="absolute inset-0 pointer-events-none opacity-5 dark:opacity-[0.03] bg-gradient-to-tr from-[#137fec] via-transparent to-transparent"></div>
+        <div className="absolute inset-0 pointer-events-none opacity-5 dark:opacity-[0.03] bg-gradient-to-tr from-slate-500 via-transparent to-transparent"></div>
       </main>
     </div>
   );
