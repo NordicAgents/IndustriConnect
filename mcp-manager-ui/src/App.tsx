@@ -174,8 +174,7 @@ function AppContent() {
       if (chatBackend === 'cloud-llm' && cloudLLMConfig) {
         assistantResponse = await callCloudLLM(allMessages, cloudLLMConfig);
       } else if (chatBackend === 'ollama' && ollamaConfig) {
-        const ollamaResult = await callOllama(allMessages, ollamaConfig);
-        assistantResponse = { content: ollamaResult };
+        assistantResponse = await callOllama(allMessages, ollamaConfig);
       } else {
         throw new Error('Chat backend is not configured.');
       }
