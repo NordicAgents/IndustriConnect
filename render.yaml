@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: industriconnect-ui
+    env: docker
+    dockerContext: mcp-manager-ui
+    plan: free
+    branch: main
+    envVars:
+      - key: PORT
+        value: 3000
