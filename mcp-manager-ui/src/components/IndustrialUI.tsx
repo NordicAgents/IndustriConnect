@@ -136,30 +136,7 @@ export default function IndustrialUI({
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col relative bg-[#f6f7f8] dark:bg-[#101922]">
         {/* Top Header Stats */}
-        <header className="flex items-center justify-between px-8 py-4 border-b border-slate-200 dark:border-[#233648]">
-          <div className="flex gap-8">
-            <div className="flex flex-col">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">CPU Load</span>
-              <div className="flex items-center gap-2">
-                <span className="text-lg font-bold font-mono">14%</span>
-                <span className="text-[10px] font-medium text-orange-500">-2%</span>
-              </div>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Connectivity</span>
-              <div className="flex items-center gap-2">
-                <span className="text-lg font-bold font-mono">12ms</span>
-                <span className="text-[10px] font-medium text-green-500">+1%</span>
-              </div>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Temperature</span>
-              <div className="flex items-center gap-2">
-                <span className="text-lg font-bold font-mono">42°C</span>
-                <span className="text-[10px] font-medium text-orange-500">-1%</span>
-              </div>
-            </div>
-          </div>
+        <header className="flex items-center justify-end px-8 py-4 border-b border-slate-200 dark:border-[#233648]">
           <div className="flex items-center gap-3">
             <button className="p-2 rounded hover:bg-slate-100 dark:hover:bg-[#233648] transition-colors relative">
               <span className="material-symbols-outlined text-[20px]">notifications</span>
@@ -290,17 +267,7 @@ export default function IndustrialUI({
                 </button>
               </div>
             </div>
-            <div className="mt-3 flex items-center justify-between px-2">
-              <div className="flex gap-4">
-                <button className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors uppercase tracking-widest">
-                  <span className="material-symbols-outlined text-[16px]">attach_file</span>
-                  Attach Logic
-                </button>
-                <button className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors uppercase tracking-widest">
-                  <span className="material-symbols-outlined text-[16px]">mic</span>
-                  Voice Cmd
-                </button>
-              </div>
+            <div className="mt-3 flex items-center justify-end px-2">
               <p className="text-[10px] text-slate-400 italic">Press Enter to dispatch, Shift+Enter for new line</p>
             </div>
           </div>
