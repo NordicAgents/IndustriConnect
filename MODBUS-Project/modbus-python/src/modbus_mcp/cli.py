@@ -105,14 +105,14 @@ async def _retry_call(
             return result, None, (time.perf_counter() - start) * 1000.0, attempt
         except (ModbusException, asyncio.TimeoutError) as e:
             last_err = f"{type(e).__name__}: {str(e)}"
-            ctx.error(f"{op} failed on attempt {attempt}: {last_err}")
+            await ctx.error(f"{op} failed on attempt {attempt}: {last_err}")
             if attempt > max_retries:
                 break
             backoff = MODBUS_RETRY_BACKOFF_BASE * (2 ** (attempt - 1))
             await asyncio.sleep(backoff)
         except Exception as e:  # unexpected
             last_err = f"Unexpected {type(e).__name__}: {str(e)}"
-            ctx.error(f"{op} unexpected error on attempt {attempt}: {last_err}")
+            await ctx.error(f"{op} unexpected error on attempt {attempt}: {last_err}")
             break
     return None, last_err, (time.perf_counter() - start) * 1000.0, attempt
 
@@ -313,7 +313,7 @@ async def read_register(address: int, ctx: Context, slave_id: int = MODBUS_DEFAU
     if hasattr(result, "isError") and result.isError():
         return _make_result(False, error=str(result), meta={"address": address, "slave_id": slave_id})
     value = result.registers[0]
-    ctx.info(f"Read register {address} from slave {slave_id}: {value}")
+    await ctx.info(f"Read register {address} from slave {slave_id}: {value}")
     return _make_result(True, data={"value": value}, meta={"address": address, "slave_id": slave_id, "duration_ms": round(duration_ms, 3), "attempts": attempts})
 
 @mcp.tool()
@@ -340,7 +340,7 @@ async def write_register(address: int, value: int, ctx: Context, slave_id: int =
         return _make_result(False, error=err, meta={"address": address, "value": value, "slave_id": slave_id, "duration_ms": round(duration_ms, 3), "attempts": attempts})
     if hasattr(result, "isError") and result.isError():
         return _make_result(False, error=str(result), meta={"address": address, "value": value, "slave_id": slave_id})
-    ctx.info(f"Wrote {value} to register {address} on slave {slave_id}")
+    await ctx.info(f"Wrote {value} to register {address} on slave {slave_id}")
     return _make_result(True, data={"written": value}, meta={"address": address, "slave_id": slave_id, "duration_ms": round(duration_ms, 3), "attempts": attempts})
 
 # Tools: Coil operations
@@ -370,7 +370,7 @@ async def read_coils(address: int, count: int, ctx: Context, slave_id: int = MOD
     )
     if err is not None:
         return _make_result(False, error=err, meta={"address": address, "count": count, "slave_id": slave_id, **meta})
-    ctx.info(f"Read {count} coils starting at {address} from slave {slave_id}")
+    await ctx.info(f"Read {count} coils starting at {address} from slave {slave_id}")
     return _make_result(True, data={"values": values}, meta={"address": address, "count": count, "slave_id": slave_id, **meta})
 
 @mcp.tool()
@@ -397,7 +397,7 @@ async def write_coil(address: int, value: bool, ctx: Context, slave_id: int = MO
         return _make_result(False, error=err, meta={"address": address, "value": value, "slave_id": slave_id, "duration_ms": round(duration_ms, 3), "attempts": attempts})
     if hasattr(result, "isError") and result.isError():
         return _make_result(False, error=str(result), meta={"address": address, "value": value, "slave_id": slave_id})
-    ctx.info(f"Wrote {value} to coil {address} on slave {slave_id}")
+    await ctx.info(f"Wrote {value} to coil {address} on slave {slave_id}")
     return _make_result(True, data={"written": value}, meta={"address": address, "slave_id": slave_id, "duration_ms": round(duration_ms, 3), "attempts": attempts})
 
 # Tools: Input registers
@@ -427,7 +427,7 @@ async def read_input_registers(address: int, count: int, ctx: Context, slave_id:
     )
     if err is not None:
         return _make_result(False, error=err, meta={"address": address, "count": count, "slave_id": slave_id, **meta})
-    ctx.info(f"Read {count} input registers starting at {address} from slave {slave_id}")
+    await ctx.info(f"Read {count} input registers starting at {address} from slave {slave_id}")
     return _make_result(True, data={"registers": values}, meta={"address": address, "count": count, "slave_id": slave_id, **meta})
 
 # Tools: Read multiple holding registers
@@ -457,7 +457,7 @@ async def read_multiple_holding_registers(address: int, count: int, ctx: Context
     )
     if err is not None:
         return _make_result(False, error=err, meta={"address": address, "count": count, "slave_id": slave_id, **meta})
-    ctx.info(f"Read {count} holding registers starting at {address} from slave {slave_id}")
+    await ctx.info(f"Read {count} holding registers starting at {address} from slave {slave_id}")
     return _make_result(True, data={"registers": values}, meta={"address": address, "count": count, "slave_id": slave_id, **meta})
 
 # Prompts: Templates for Modbus interactions
@@ -501,7 +501,7 @@ async def read_discrete_inputs(address: int, count: int, ctx: Context, slave_id:
     )
     if err is not None:
         return _make_result(False, error=err, meta={"address": address, "count": count, "slave_id": slave_id, **meta})
-    ctx.info(f"Read {count} discrete inputs starting at {address} from slave {slave_id}")
+    await ctx.info(f"Read {count} discrete inputs starting at {address} from slave {slave_id}")
     return _make_result(True, data={"values": values}, meta={"address": address, "count": count, "slave_id": slave_id, **meta})
 
 
@@ -528,7 +528,7 @@ async def write_registers(address: int, values: List[int], ctx: Context, slave_i
         return _make_result(False, error=err, meta={"address": address, "count": len(values), "slave_id": slave_id, "duration_ms": round(duration_ms, 3), "attempts": attempts})
     if hasattr(result, "isError") and result.isError():
         return _make_result(False, error=str(result), meta={"address": address, "count": len(values), "slave_id": slave_id})
-    ctx.info(f"Wrote {len(values)} registers starting at {address} on slave {slave_id}")
+    await ctx.info(f"Wrote {len(values)} registers starting at {address} on slave {slave_id}")
     return _make_result(True, data={"written": len(values)}, meta={"address": address, "slave_id": slave_id, "duration_ms": round(duration_ms, 3), "attempts": attempts})
 
 
@@ -550,7 +550,7 @@ async def write_coils_bulk(address: int, values: List[bool], ctx: Context, slave
         return _make_result(False, error=err, meta={"address": address, "count": len(values), "slave_id": slave_id, "duration_ms": round(duration_ms, 3), "attempts": attempts})
     if hasattr(result, "isError") and result.isError():
         return _make_result(False, error=str(result), meta={"address": address, "count": len(values), "slave_id": slave_id})
-    ctx.info(f"Wrote {len(values)} coils starting at {address} on slave {slave_id}")
+    await ctx.info(f"Wrote {len(values)} coils starting at {address} on slave {slave_id}")
     return _make_result(True, data={"written": len(values)}, meta={"address": address, "slave_id": slave_id, "duration_ms": round(duration_ms, 3), "attempts": attempts})
 
 
@@ -570,7 +570,7 @@ async def mask_write_register(address: int, and_mask: int, or_mask: int, ctx: Co
         return _make_result(False, error=err, meta={"address": address, "and_mask": and_mask, "or_mask": or_mask, "slave_id": slave_id, "duration_ms": round(duration_ms, 3), "attempts": attempts})
     if hasattr(result, "isError") and result.isError():
         return _make_result(False, error=str(result), meta={"address": address, "and_mask": and_mask, "or_mask": or_mask, "slave_id": slave_id})
-    ctx.info(f"Mask write register {address} on slave {slave_id}")
+    await ctx.info(f"Mask write register {address} on slave {slave_id}")
     return _make_result(True, data={"address": address, "and_mask": and_mask, "or_mask": or_mask}, meta={"slave_id": slave_id, "duration_ms": round(duration_ms, 3), "attempts": attempts})
 
 

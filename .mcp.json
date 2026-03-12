@@ -1,0 +1,88 @@
+{
+  "mcpServers": {
+    "Modbus MCP": {
+      "command": "uv",
+      "args": ["--directory", "MODBUS-Project/modbus-python", "run", "modbus-mcp"],
+      "env": {
+        "MODBUS_TYPE": "tcp",
+        "MODBUS_HOST": "127.0.0.1",
+        "MODBUS_PORT": "1502",
+        "MODBUS_DEFAULT_SLAVE_ID": "1"
+      }
+    },
+    "MQTT MCP": {
+      "command": "uv",
+      "args": ["--directory", "MQTT-Project/mqtt-python", "run", "mqtt-mcp"],
+      "env": {
+        "MQTT_BROKER_URL": "mqtt://127.0.0.1:1883",
+        "MQTT_CLIENT_ID": "mqtt-mcp-client",
+        "SPARKPLUG_GROUP_ID": "factory",
+        "SPARKPLUG_EDGE_NODE_ID": "edge-node-1"
+      }
+    },
+    "OPC UA MCP": {
+      "command": "uv",
+      "args": ["--directory", "OPCUA-Project/opcua-mcp-server", "run", "opcua-mcp-server.py"],
+      "env": {
+        "OPCUA_SERVER_URL": "opc.tcp://localhost:4840"
+      }
+    },
+    "BACnet MCP": {
+      "command": "uv",
+      "args": ["--directory", "BACnet-Project/bacnet-python", "run", "bacnet-mcp"],
+      "env": {
+        "BACNET_INTERFACE": "0.0.0.0",
+        "BACNET_PORT": "47808"
+      }
+    },
+    "DNP3 MCP": {
+      "command": "uv",
+      "args": ["--directory", "DNP3-Project/dnp3-python", "run", "dnp3-mcp"],
+      "env": {
+        "DNP3_CONNECTION_TYPE": "tcp",
+        "DNP3_HOST": "127.0.0.1",
+        "DNP3_PORT": "7300"
+      }
+    },
+    "EtherCAT MCP": {
+      "command": "uv",
+      "args": ["--directory", "EtherCAT-Project/ethercat-python", "run", "ethercat-mcp"],
+      "env": {
+        "ETHERCAT_INTERFACE": "eth0"
+      }
+    },
+    "EtherNet/IP MCP": {
+      "command": "uv",
+      "args": ["--directory", "EtherNetIP-Project/ethernetip-python", "run", "ethernetip-mcp"],
+      "env": {
+        "ENIP_HOST": "127.0.0.1",
+        "ENIP_PORT": "5025",
+        "ENIP_SLOT": "0"
+      }
+    },
+    "PROFIBUS MCP": {
+      "command": "uv",
+      "args": ["--directory", "PROFIBUS-Project/profibus-python", "run", "profibus-mcp"],
+      "env": {
+        "PROFIBUS_MOCK": "true"
+      }
+    },
+    "PROFINET MCP": {
+      "command": "uv",
+      "args": ["--directory", "PROFINET-Project/profinet-python", "run", "profinet-mcp"],
+      "env": {
+        "PROFINET_INTERFACE": "eth0"
+      }
+    },
+    "S7comm MCP": {
+      "command": "uv",
+      "args": ["--directory", "S7comm-Project/s7comm-python", "run", "s7comm-mcp"],
+      "env": {
+        "S7_HOST": "127.0.0.1",
+        "S7_PORT": "1102",
+        "S7_RACK": "0",
+        "S7_SLOT": "2"
+      }
+    }
+  }
+}
