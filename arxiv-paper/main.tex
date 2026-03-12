@@ -93,39 +93,23 @@
 
 %% ─── Abstract ────────────────────────────────────────────────────────────────
 \begin{abstract}
-Industrial automation environments are characterised by a rich and heterogeneous
-landscape of communication protocols—Modbus, OPC~UA, MQTT with Sparkplug~B,
-BACnet, DNP3, EtherCAT, EtherNet/IP, PROFIBUS, PROFINET, and Siemens~S7comm—
-that underpin the monitoring and control of physical processes in manufacturing,
-energy, and infrastructure sectors. Contemporary large language model (LLM)
-based AI assistants demonstrate strong capabilities in structured reasoning,
-workflow orchestration, and natural language understanding, yet they lack any
-native means to communicate with operational technology (OT) devices and
-systems. This paper presents \textbf{IndustriConnect}, an open-source suite of
-Model Context Protocol (MCP) servers that bridges this gap by exposing all nine
-major industrial protocols as structured, self-describing AI tools. Each
-protocol module follows a consistent three-layer architecture in which an MCP
-client (such as a Claude~Desktop session or a web management console) invokes
-tool calls that are translated by a Python MCP server into native protocol
-operations against real or simulated field devices. Key design contributions
-include: (i)~a unified response envelope \texttt{\{success, data, error, meta\}}
-that enables cross-protocol observability and consistent error handling;
-(ii)~a mock-first development methodology in which every protocol module ships
-with a high-fidelity device simulator for safe, hardware-free iteration;
-(iii)~industrial-grade reliability patterns including automatic chunking,
-exponential-backoff retries, and typed data access; and (iv)~a companion
-web-based management console (\textit{mcp-manager-ui}) supporting
-multi-server configuration and LLM-driven interaction. The suite is built on
-the FastMCP framework for Python and is released as open source. Together
-these components enable AI assistants to read process values, write setpoints,
-browse device hierarchies, and orchestrate diagnostic workflows across
-heterogeneous OT environments, without requiring dedicated integration
-middleware or manual protocol programming.
+AI assistants built on large language models (LLMs) excel at reasoning and
+workflow orchestration but cannot natively communicate with operational
+technology (OT) devices. We present \textbf{IndustriConnect}, an open-source
+suite of Model Context Protocol (MCP) servers that exposes ten major industrial
+protocols—Modbus, OPC~UA, MQTT/Sparkplug~B, BACnet, DNP3, EtherCAT,
+EtherNet/IP, PROFIBUS, PROFINET, and Siemens~S7comm—as structured AI tools.
+Each module follows a three-layer architecture: an MCP client issues tool calls,
+a Python server translates them into native protocol operations, and real or
+simulated field devices execute them. The suite provides a unified response
+envelope for cross-protocol consistency, built-in device simulators for
+hardware-free development, and a companion web console for multi-server
+management. Together, these components let AI agents read process values, write
+setpoints, and orchestrate diagnostics across heterogeneous industrial
+environments without custom integration middleware.
 \end{abstract}
 
-\textbf{Keywords:} industrial automation; Model Context Protocol; large language
-models; OPC~UA; Modbus; IIoT; operational technology; AI-assisted control;
-MQTT; PROFINET.
+\textbf{Keywords:} Industry MCP; Industry IOT; Industry AI Agents; Industry Protocols.
 
 \vspace{1em}
 \noindent\textit{arXiv categories:} eess.SY (primary); cs.SE; cs.AI
@@ -533,7 +517,8 @@ The following subsections describe each module's design decisions.
     industrial sector served.}
   \label{tab:protocols}
   \renewcommand{\arraystretch}{1.25}
-  \begin{tabular}{@{}llllll@{}}
+  \resizebox{\textwidth}{!}{%
+  \begin{tabular}{@{}lllrl@{}}
     \toprule
     \textbf{Protocol} & \textbf{Transport} & \textbf{Python Library} &
     \textbf{Tools} & \textbf{Application Domain} \\
@@ -549,7 +534,7 @@ The following subsections describe each module's design decisions.
     PROFINET          & Ethernet            & \texttt{scapy}, \texttt{lxml} & 7 & Siemens factory automation \\
     Siemens S7comm    & ISO-on-TCP          & \texttt{python-snap7}     & 12  & Siemens S7 PLCs \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}}
 \end{table*}
 
 \begin{figure}[h!]
@@ -1026,7 +1011,7 @@ hardware access or production risk.
 \end{enumerate}
 
 IndustriConnect is released as open source and is available at
-\url{https://github.com/[your-repo-path-here]}. Contributions in the form of
+\url{https://github.com/NordicAgents/IndustriConnect}. Contributions in the form of
 additional tool coverage, improved mock scenarios, and protocol extensions are
 welcomed.
 
