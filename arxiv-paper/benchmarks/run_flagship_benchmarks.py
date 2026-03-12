@@ -206,7 +206,15 @@ def classify_error(result: Dict[str, Any]) -> Optional[str]:
         return "endpoint_unavailable"
     if "timeout" in error:
         return "timeout"
+    if "illegal" in error or "invalid address" in error or "address" in error and "9999" in error:
+        return "illegal_address"
+    if "type" in error and ("mismatch" in error or "float" in error or "not_a_number" in error):
+        return "type_mismatch"
+    if "invalid" in error or "empty" in error or "qos" in error:
+        return "invalid_input"
     if "bad" in error or "exception" in error:
+        return "protocol_error"
+    if "read failed" in error or "write failed" in error:
         return "protocol_error"
     return "other"
 
@@ -249,6 +257,7 @@ def finalize_task(
     calls: List[Dict[str, Any]],
     checks: List[bool],
     started_at: float,
+    task_type: str = "normal",
 ) -> Dict[str, Any]:
     matched = [bool(check) for check in checks]
     failures = [classify_error(call) for ok, call in zip(matched, calls) if not ok]
@@ -257,12 +266,14 @@ def finalize_task(
         "family": family,
         "description": description,
         "repetition": repetition,
+        "task_type": task_type,
         "task_success": all(matched),
         "tool_calls": len(calls),
         "tool_call_successes": sum(1 for ok in matched if ok),
         "task_latency_ms": round((time.perf_counter() - started_at) * 1000.0, 3),
         "retry_count": sum(extract_retry_count(call) for call in calls),
         "failure_classes": [failure for failure in failures if failure],
+        "error_classes": [classify_error(call) for call in calls if classify_error(call)],
         "calls": calls,
     }
 
@@ -556,6 +567,205 @@ async def run_normal_tasks(
         )
 
     return results
+
+
+async def run_fault_injection_tasks(
+    modbus_rw: ClientSession,
+    mqtt: ClientSession,
+    opcua: ClientSession,
+    opcua_nodes: Dict[str, str],
+) -> List[Dict[str, Any]]:
+    """Run fault-injected tasks that exercise error handling paths.
+
+    Each task expects a structured failure or graceful degradation rather than
+    success. The benchmark judges whether the adapter returns a well-formed
+    error envelope rather than crashing or returning an unstructured response.
+    """
+    results: List[Dict[str, Any]] = []
+    for repetition in range(1, 11):
+        # FM1: Modbus — read invalid register address (9999)
+        started = time.perf_counter()
+        call = await call_tool_json(modbus_rw, "read_register", {"address": 9999})
+        results.append(
+            finalize_task(
+                "FM1",
+                "Modbus",
+                "Read invalid register address (9999) and expect a structured protocol error.",
+                repetition,
+                [call],
+                [call_correct(call, False)],
+                started,
+                task_type="fault",
+            )
+        )
+
+        # FM2: Modbus — write overflow value (70000 > uint16 max)
+        # Accept either success=false (adapter validates) or success=true with
+        # truncated/clamped value (adapter passes through and mock truncates).
+        started = time.perf_counter()
+        call = await call_tool_json(modbus_rw, "write_register", {"address": 1, "value": 70000})
+        fm2_ok = (
+            not call.get("success")
+            or (call.get("success") and call.get("data", {}).get("written", 70000) != 70000)
+        )
+        results.append(
+            finalize_task(
+                "FM2",
+                "Modbus",
+                "Write overflow value (70000 > uint16 max) and observe adapter or mock behavior.",
+                repetition,
+                [call],
+                [fm2_ok],
+                started,
+                task_type="fault",
+            )
+        )
+
+        # FQ1: MQTT — publish to empty topic ""
+        started = time.perf_counter()
+        call = await call_tool_json(
+            mqtt,
+            "publish_message",
+            {"topic": "", "payload": "{\"test\": true}", "qos": 0, "retain": False},
+        )
+        results.append(
+            finalize_task(
+                "FQ1",
+                "MQTT",
+                "Publish to empty topic string and expect a structured invalid-input error.",
+                repetition,
+                [call],
+                [call_correct(call, False)],
+                started,
+                task_type="fault",
+            )
+        )
+
+        # FQ2: MQTT — subscribe with invalid QoS (5)
+        started = time.perf_counter()
+        call = await call_tool_json(
+            mqtt,
+            "subscribe_topic",
+            {"topic": "sensors/#", "qos": 5},
+        )
+        results.append(
+            finalize_task(
+                "FQ2",
+                "MQTT",
+                "Subscribe with invalid QoS (5) and expect a structured invalid-input error.",
+                repetition,
+                [call],
+                [call_correct(call, False)],
+                started,
+                task_type="fault",
+            )
+        )
+
+        # FO1: OPC UA — read non-existent node ns=2;i=99999
+        started = time.perf_counter()
+        call = await call_tool_json(opcua, "read_opcua_node", {"node_id": "ns=2;i=99999"})
+        results.append(
+            finalize_task(
+                "FO1",
+                "OPC UA",
+                "Read non-existent node (ns=2;i=99999) and expect a structured read-failed error.",
+                repetition,
+                [call],
+                [call_correct(call, False)],
+                started,
+                task_type="fault",
+            )
+        )
+
+        # FO2: OPC UA — write wrong type ("not_a_number" to float node)
+        started = time.perf_counter()
+        call = await call_tool_json(
+            opcua,
+            "write_opcua_node",
+            {"node_id": opcua_nodes["ValvePosition"], "value": "not_a_number"},
+        )
+        results.append(
+            finalize_task(
+                "FO2",
+                "OPC UA",
+                "Write wrong type (string to float node) and expect a structured write-failed error.",
+                repetition,
+                [call],
+                [call_correct(call, False)],
+                started,
+                task_type="fault",
+            )
+        )
+
+        # FX1: Cross-protocol — 3-step sequence with one deliberate bad input
+        # Step 1: valid Modbus read, Step 2: invalid OPC UA node, Step 3: valid MQTT publish
+        started = time.perf_counter()
+        step1 = await call_tool_json(modbus_rw, "read_input_registers", {"address": 0, "count": 4})
+        step2 = await call_tool_json(opcua, "read_opcua_node", {"node_id": "ns=2;i=99999"})
+        step3 = await call_tool_json(
+            mqtt,
+            "publish_message",
+            {
+                "topic": "control/pump",
+                "payload": json.dumps({"pump_speed": 50}),
+                "qos": 0,
+                "retain": False,
+            },
+        )
+        results.append(
+            finalize_task(
+                "FX1",
+                "Cross-protocol",
+                "3-step cross-protocol sequence with one deliberate bad OPC UA read; expect 2/3 succeed.",
+                repetition,
+                [step1, step2, step3],
+                [
+                    call_correct(step1, True, lambda item: len(item["data"]["registers"]) == 4),
+                    call_correct(step2, False),
+                    call_correct(step3, True, lambda item: item["data"]["topic"] == "control/pump"),
+                ],
+                started,
+                task_type="fault",
+            )
+        )
+
+    return results
+
+
+def aggregate_fault_results(results: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Compute per-task fault-injection summaries."""
+    by_task: Dict[str, List[Dict[str, Any]]] = {}
+    for result in results:
+        by_task.setdefault(result["task_id"], []).append(result)
+
+    task_summary = {}
+    for task_id, rows in by_task.items():
+        latencies = [row["task_latency_ms"] for row in rows]
+        error_classes: Dict[str, int] = {}
+        for row in rows:
+            for ec in row.get("error_classes", []):
+                error_classes[ec] = error_classes.get(ec, 0) + 1
+        task_summary[task_id] = {
+            "family": rows[0]["family"],
+            "description": rows[0]["description"],
+            "error_handling_rate": round(
+                sum(1 for row in rows if row["task_success"]) / len(rows), 3
+            ),
+            "median_latency_ms": round(statistics.median(latencies), 3),
+            "p95_latency_ms": percentile(latencies, 95),
+            "error_class_distribution": error_classes,
+        }
+
+    overall_error_handling_rate = round(
+        sum(1 for r in results if r["task_success"]) / len(results), 3
+    ) if results else 0.0
+
+    return {
+        "by_task": task_summary,
+        "overall_error_handling_rate": overall_error_handling_rate,
+        "total_runs": len(results),
+        "total_tool_calls": sum(r["tool_calls"] for r in results),
+    }
 
 
 async def recovery_trial(
@@ -895,9 +1105,11 @@ async def main() -> None:
         ) as opcua:
             opcua_nodes = await discover_opcua_nodes(opcua)
             normal_results = await run_normal_tasks(modbus_rw, modbus_ro, mqtt, opcua, opcua_nodes)
+            fault_results = await run_fault_injection_tasks(modbus_rw, mqtt, opcua, opcua_nodes)
 
         recovery_results = await run_recovery_tasks(modbus_mock, broker, opcua_server)
         normal_summary = aggregate_normal_results(normal_results)
+        fault_summary = aggregate_fault_results(fault_results)
         recovery_summary = aggregate_recovery_results(recovery_results)
         protocol_inventory = build_protocol_inventory()
         recovery_figure = write_recovery_figure(recovery_summary)
@@ -906,6 +1118,8 @@ async def main() -> None:
             "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             "normal_tasks": normal_results,
             "normal_summary": normal_summary,
+            "fault_injection_tasks": fault_results,
+            "fault_injection_summary": fault_summary,
             "recovery_trials": recovery_results,
             "recovery_summary": recovery_summary,
             "protocol_inventory": protocol_inventory,

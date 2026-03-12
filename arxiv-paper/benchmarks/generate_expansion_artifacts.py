@@ -40,6 +40,18 @@ TASK_ORDER = [
     "X2",
 ]
 
+FAULT_TASK_ORDER = [
+    "FM1",
+    "FM2",
+    "FQ1",
+    "FQ2",
+    "FO1",
+    "FO2",
+    "FX1",
+]
+
+ERROR_DIST_PATH = FIGURES / "fig6_error_distribution.png"
+
 PROTOCOL_DETAILS = {
     "Modbus": {
         "mock_endpoint": "TCP mock device",
@@ -171,12 +183,42 @@ def build_recovery_rows(results: Dict[str, Any]) -> List[Dict[str, Any]]:
     return rows
 
 
+def build_fault_task_rows(results: Dict[str, Any]) -> List[Dict[str, Any]]:
+    fault_summary = results.get("fault_injection_summary", {})
+    by_task = fault_summary.get("by_task", {})
+    rows = []
+    for task_id in FAULT_TASK_ORDER:
+        if task_id not in by_task:
+            continue
+        summary = by_task[task_id]
+        rows.append(
+            {
+                "task_id": task_id,
+                "family": summary["family"],
+                "description": summary["description"],
+                "error_handling_rate": summary["error_handling_rate"],
+                "median_latency_ms": summary["median_latency_ms"],
+                "p95_latency_ms": summary["p95_latency_ms"],
+                "error_class_distribution": summary["error_class_distribution"],
+            }
+        )
+    return rows
+
+
 def write_summary_json(results: Dict[str, Any]) -> Dict[str, Any]:
+    fault_rows = build_fault_task_rows(results)
+    fault_summary = results.get("fault_injection_summary", {})
     summary = {
         "generated_from": str(RESULTS_PATH.relative_to(ROOT)),
         "protocol_rows": build_protocol_rows(results),
         "family_rows": results["normal_summary"]["by_family"],
         "task_rows": build_task_rows(results),
+        "fault_task_rows": fault_rows,
+        "fault_overall": {
+            "overall_error_handling_rate": fault_summary.get("overall_error_handling_rate", 0.0),
+            "total_runs": fault_summary.get("total_runs", 0),
+            "total_tool_calls": fault_summary.get("total_tool_calls", 0),
+        },
         "recovery_phase_rows": build_recovery_rows(results),
     }
     SUMMARY_PATH.write_text(json.dumps(summary, indent=2), encoding="utf-8")
@@ -362,6 +404,52 @@ def render_recovery_breakdown_figure(recovery_rows: List[Dict[str, Any]]) -> Non
     plt.close(fig)
 
 
+def render_error_distribution_figure(fault_task_rows: List[Dict[str, Any]]) -> None:
+    if not fault_task_rows:
+        return
+
+    all_classes = set()
+    for row in fault_task_rows:
+        all_classes.update(row.get("error_class_distribution", {}).keys())
+    all_classes = sorted(all_classes)
+    if not all_classes:
+        return
+
+    class_colors = {
+        "protocol_error": "#B45309",
+        "illegal_address": "#DC2626",
+        "type_mismatch": "#7C3AED",
+        "invalid_input": "#2563EB",
+        "guarded_write": "#0F766E",
+        "endpoint_unavailable": "#6B7280",
+        "timeout": "#D97706",
+        "other": "#9CA3AF",
+    }
+
+    task_ids = [row["task_id"] for row in fault_task_rows]
+    fig, ax = plt.subplots(figsize=(7.0, 3.4), dpi=300)
+    bottoms = [0.0] * len(task_ids)
+
+    for cls in all_classes:
+        values = [
+            row.get("error_class_distribution", {}).get(cls, 0) for row in fault_task_rows
+        ]
+        color = class_colors.get(cls, "#9CA3AF")
+        ax.bar(task_ids, values, bottom=bottoms, color=color, width=0.62, label=cls.replace("_", " "))
+        bottoms = [b + v for b, v in zip(bottoms, values)]
+
+    ax.set_ylabel("Error occurrences (10 runs)")
+    ax.set_title("Error class distribution across fault-injected tasks")
+    ax.grid(axis="y", linestyle="--", alpha=0.35)
+    ax.set_axisbelow(True)
+    ax.legend(frameon=False, fontsize=7.5, loc="upper right", ncol=2)
+
+    ax.set_ylim(0, max(bottoms) * 1.2 if max(bottoms) > 0 else 10)
+    fig.tight_layout()
+    fig.savefig(ERROR_DIST_PATH, dpi=300, bbox_inches="tight", facecolor="white")
+    plt.close(fig)
+
+
 def main() -> None:
     GENERATED.mkdir(exist_ok=True)
     FIGURES.mkdir(exist_ok=True)
@@ -371,11 +459,14 @@ def main() -> None:
     render_protocol_map(summary["protocol_rows"])
     render_support_context_figure()
     render_recovery_breakdown_figure(summary["recovery_phase_rows"])
+    render_error_distribution_figure(summary.get("fault_task_rows", []))
 
     print(f"Wrote summary JSON to {SUMMARY_PATH}")
     print(f"Wrote protocol map to {PROTOCOL_MAP_PATH}")
     print(f"Wrote support context figure to {SUPPORT_CONTEXT_PATH}")
     print(f"Wrote recovery breakdown figure to {RECOVERY_BREAKDOWN_PATH}")
+    if summary.get("fault_task_rows"):
+        print(f"Wrote error distribution figure to {ERROR_DIST_PATH}")
 
 
 if __name__ == "__main__":
