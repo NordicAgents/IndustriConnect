@@ -7,6 +7,7 @@
 \usepackage{array}
 \usepackage{url}
 
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
 \newcommand{\system}{\textsc{IndustriConnect}}
 
 \begin{document}
@@ -14,14 +15,27 @@
 \title{IndustriConnect: MCP Adapters and Mock-First Evaluation for AI-Assisted Industrial Operations}
 
 \author{
-\IEEEauthorblockN{Anonymous Submission}
-\IEEEauthorblockA{Artifact repository: \url{https://github.com/NordicAgents/IndustriConnect-MCPs}}
+\IEEEauthorblockN{Melwin Xavier}
+\IEEEauthorblockA{Lule\aa{} tekniska universitet, Sweden\\
+melwin.xavier@ltu.se}
+\and
+\IEEEauthorblockN{Melveena Jolly}
+\IEEEauthorblockA{Independent Researcher\\
+melveenajollyk@gmail.com}
+\and
+\IEEEauthorblockN{Vaisakh M A}
+\IEEEauthorblockA{Independent Researcher\\
+997vaisakh@gmail.com}
+\and
+\IEEEauthorblockN{Midhun Xavier}
+\IEEEauthorblockA{Independent Researcher\\
+midhun@industriagents.com}
 }
 
 \maketitle
 
 \begin{abstract}
-AI assistants can decompose multi-step workflows, but they do not natively speak industrial protocols such as Modbus, MQTT/Sparkplug B, or OPC UA. This paper presents \system, a suite of Model Context Protocol (MCP) adapters that expose industrial operations as schema-discoverable AI tools while preserving protocol-specific connectivity and safety controls. The system uses a common response envelope and a mock-first workflow so adapter behavior can be exercised locally before connecting to plant equipment. We evaluate the current flagship adapters for Modbus, MQTT/Sparkplug B, and OPC UA with deterministic mock environments and fixed tool workflows corresponding to 14 representative assistant tasks. Across 140 normal runs and 200 tool calls, all benchmarked tasks completed successfully; recovery experiments after forced endpoint restarts also recovered in all 30 trials. The results position \system\ as a reproducible prototype for AI-assisted industrial operations, while also making clear that the evidence is limited to mock-based adapter behavior rather than production deployment.
+AI assistants can decompose multi-step workflows, but they do not natively speak industrial protocols such as Modbus, MQTT/Sparkplug B, or OPC UA. This paper presents \system, a suite of Model Context Protocol (MCP) adapters that expose industrial operations as schema-discoverable AI tools while preserving protocol-specific connectivity and safety controls. The system uses a common response envelope and a mock-first workflow so adapter behavior can be exercised locally before connecting to plant equipment. The paper evaluates the current flagship adapters for Modbus, MQTT/Sparkplug B, and OPC UA with deterministic mock environments and fixed tool workflows corresponding to 14 representative assistant tasks. In a fresh benchmark pass comprising 140 normal runs, 200 tool calls, and 30 restart trials, all benchmarked tasks completed successfully. The results position \system\ as a reproducible prototype for AI-assisted industrial operations while keeping the evidence bounded to mock-based adapter behavior rather than production deployment.
 \end{abstract}
 
 \section{Introduction}
@@ -29,9 +43,11 @@ AI assistants can decompose multi-step workflows, but they do not natively speak
 
 Consider a simple operator request: check a temperature excursion on an OPC UA namespace, confirm a related Modbus register block, and publish a Sparkplug B status update for downstream systems. Each subtask is routine in isolation, but the overall workflow crosses incompatible operational technology (OT) protocols whose interfaces were not designed for modern AI assistants. This protocol gap remains a practical barrier to AI-assisted industrial automation even as Industry 4.0 programs push tighter coupling between information technology and plant-floor systems \cite{xu2018industry4,wollschlaeger2017future}.
 
-Large language model (LLM) assistants work best with typed, discoverable tool interfaces rather than binary protocol frames or vendor SDKs. MCP provides a standard way for assistants to list tools, inspect schemas, and invoke operations through a common call interface \cite{anthropic2024mcp}. MCP alone, however, does not solve OT connectivity, write-guarding, or the need to validate behavior safely before touching real equipment.
+Large language model (LLM) assistants work best with typed, discoverable tool interfaces rather than binary protocol frames or vendor SDKs. MCP provides a standard way for assistants to list tools, inspect schemas, and invoke operations through a common call interface \cite{anthropic2024mcp}. MCP alone, however, does not solve OT connectivity, endpoint health, or the need to represent blocked writes and transient failures in a way that an agent can reason about safely.
 
-This paper reframes \system\ as a bounded systems contribution: a prototype MCP-to-OT adapter architecture with a mock-first evaluation workflow. The paper does not claim a complete industrial platform, a new LLM reasoning method, or production deployment evidence. Instead, it focuses on the flagship adapters for Modbus, MQTT/Sparkplug B, and OPC UA, while retaining seven additional protocol modules as ecosystem breadth.
+That gap is especially visible in brownfield environments. Real plants often begin with partial register maps, vendor-specific addressing rules, or limited access windows on production equipment. A practical integration layer therefore needs more than tool schemas: it also needs protocol adapters, explicit safety conventions, and a way to validate workflows before touching live controllers.
+
+This paper reframes \system\ as a bounded systems contribution: a prototype MCP-to-OT adapter architecture with a mock-first evaluation workflow. The paper does not claim a complete industrial platform, a new LLM reasoning method, or production deployment evidence. Instead, it focuses on the flagship adapters for Modbus, MQTT/Sparkplug B, and OPC UA while retaining seven additional protocol modules as ecosystem breadth.
 
 The manuscript makes three contributions:
 \begin{enumerate}
@@ -58,79 +74,148 @@ The manuscript makes three contributions:
     \label{fig:architecture}
 \end{figure}
 
-Figure \ref{fig:architecture} shows the core pattern. An MCP-compatible assistant issues tool calls to an \system\ adapter. The adapter handles protocol translation, connection management, and any safety guards, then talks to either a mock endpoint or plant equipment. All benchmarked adapters return the same envelope,
-\texttt{\{success, data, error, meta\}}, where \texttt{meta} carries endpoint details and latency measurements. This does not erase protocol differences; instead, it gives a common wrapper around those differences so higher-level orchestration can remain consistent.
-
-In the current prototype, this envelope is also the benchmark boundary. The adapters record wall-clock latency, retry attempts, and endpoint-specific metadata directly in the tool response. That makes cross-family comparison possible without pretending that a broker publish, a Modbus register read, and an OPC UA browse are identical operations.
-
-\section{Prototype Implementation}
-\label{sec:implementation}
-
-The repository currently contains ten protocol modules. Table \ref{tab:inventory} reports the tool inventory generated from registered handlers at benchmark time, not from manual counting. The three evaluated flagships are Modbus, MQTT/Sparkplug B, and OPC UA. The other seven modules demonstrate breadth but were not benchmarked in this paper and several remain roadmap-driven scaffolds around shared MCP patterns and local mocks. This distinction is deliberate: the paper claims measured behavior only for the flagship stacks.
+Figure \ref{fig:architecture} shows the core pattern. An MCP-compatible assistant issues tool calls to an \system\ adapter. The adapter handles protocol translation, connection management, and safety guards, then talks to either a mock endpoint or plant equipment. All benchmarked adapters return the same response envelope,
+\texttt{\{success, data, error, meta\}}. The \texttt{success} flag indicates whether the requested action achieved the expected protocol outcome, \texttt{data} holds the protocol-specific payload, \texttt{error} carries a structured failure reason, and \texttt{meta} records endpoint details, timings, and retry counts. This shared envelope does not erase protocol semantics; it defines a common measurement boundary and lets cross-protocol orchestration observe healthy reads, blocked writes, and reconnect behavior with the same outer structure.
 
 \begin{table}[t]
-    \caption{Protocol inventory generated from registered MCP tool handlers.}
-    \label{tab:inventory}
+    \caption{Shared response-envelope fields used across the benchmarked adapters.}
+    \label{tab:envelope}
     \centering
     \scriptsize
-    \setlength{\tabcolsep}{3pt}
-    \begin{tabularx}{\columnwidth}{@{}>{\raggedright\arraybackslash}X c >{\raggedright\arraybackslash}p{1.58cm}@{}}
+    \begin{tabularx}{\columnwidth}{@{}lY@{}}
         \toprule
-        Adapter & Tools & Maturity \\
+        Field & Role in the adapter contract \\
         \midrule
-        Modbus & 17 & evaluated flagship \\
-        MQTT + Sparkplug B & 15 & evaluated flagship \\
-        OPC UA & 7 & evaluated flagship \\
-        BACnet/IP & 7 & roadmap/\allowbreak scaffold \\
-        DNP3 & 8 & roadmap/\allowbreak scaffold \\
-        EtherCAT & 14 & roadmap/\allowbreak scaffold \\
-        EtherNet/IP & 17 & roadmap/\allowbreak scaffold \\
-        PROFIBUS DP/PA & 11 & roadmap/\allowbreak scaffold \\
-        PROFINET & 14 & roadmap/\allowbreak scaffold \\
-        Siemens S7comm & 20 & roadmap/\allowbreak scaffold \\
+        \texttt{success} & Reports whether the requested protocol action reached the expected outcome. \\
+        \texttt{data} & Carries the protocol-specific payload such as registers, node values, or publish metadata. \\
+        \texttt{error} & Preserves a machine-readable failure reason, including guarded denials and transient endpoint failures. \\
+        \texttt{meta} & Records wall-clock latency, endpoint details, attempts, and protocol-specific trace context. \\
         \bottomrule
     \end{tabularx}
 \end{table}
 
-\textbf{Modbus.} The Modbus adapter centers on register and coil operations, connection health checks, and guarded writes. In the evaluated workflow it handled register reads, write-and-readback verification, and explicit write denial when writes were disabled. The recovery benchmark also exercised reconnect behavior after a forced Modbus mock restart.
+Table \ref{tab:envelope} is operationally important because it defines how the benchmark judges behavior. A blocked write is not treated as a generic failure if the task oracle expects a guarded denial, while a reconnect path is evaluated through the same outer structure as a healthy read. This is the main reason the paper can compare three different protocol families without pretending they expose the same payload model.
 
-\textbf{MQTT/Sparkplug B.} The MQTT adapter exposes broker health, topic subscriptions, generic publishes, and Sparkplug B device-data publishes. Its MCP responses normalize broker connectivity and publish status into the common response envelope while preserving topic-level semantics. In practice this lets one assistant workflow mix ordinary MQTT control messages with Sparkplug-oriented telemetry updates.
+The mock-first workflow complements the same architecture. Each flagship adapter is exercised against a local endpoint first, but the MCP layer remains identical when the endpoint changes. That lets an engineer develop prompts, schemas, and safety checks against a deterministic mock while preserving the same tool surface for later hardware validation.
 
-\textbf{OPC UA.} The OPC UA adapter exposes node browsing, node reads, writes, and multi-node access against a local mock plant. Method invocation exists in the prototype but was excluded from the benchmark because the current mock method path is not yet stable enough for repeatable evaluation. The measured workload therefore focuses on repeatable assistant-facing operations instead of the full prototype surface.
+\section{Prototype Implementation}
+\label{sec:implementation}
+
+Every protocol module follows the same skeleton: an MCP server registers tools and schemas, a protocol client wrapper translates tool calls into native operations, and a mock endpoint provides a safe development target. The benchmarked Modbus, MQTT/Sparkplug B, and OPC UA stacks all use this pattern, including the shared response envelope and environment-driven write gating. The result is not a universal industrial abstraction layer; it is a consistent adapter contract around heterogeneous protocols.
+
+At implementation level, the common skeleton yields four reusable behaviors. First, each server exposes discoverable MCP tools with bounded JSON input shapes. Second, each adapter keeps transport- and protocol-specific state in its own client wrapper rather than leaking it into the LLM-facing layer. Third, every tool normalizes timing and error details into the shared response envelope. Fourth, each protocol stack ships with a mock so smoke tests, prompt experiments, and regression checks can run without physical hardware.
+
+\begin{table}[t]
+    \caption{Repository protocol inventory. Tool counts come from registered handlers in the benchmark pass.}
+    \label{tab:inventory}
+    \centering
+    \scriptsize
+    \setlength{\tabcolsep}{2pt}
+    \begin{tabularx}{\columnwidth}{@{}p{0.78in}cp{0.72in}p{0.6in}p{0.82in}@{}}
+        \toprule
+        Protocol & Tools & Mock & Status & Rep. operation \\
+        \midrule
+        Modbus & 17 & TCP device & flagship & register/coil I/O \\
+        MQTT + SB & 15 & broker sim. & flagship & pub/sub + DDATA \\
+        OPC UA & 7 & UA server & flagship & browse + node R/W \\
+        BACnet/IP & 7 & BA device & scaffold & object properties \\
+        DNP3 & 8 & outstation & scaffold & point poll/control \\
+        EtherCAT & 14 & slave & scaffold & PDO/SDO access \\
+        EtherNet/IP & 17 & PLC & scaffold & controller tags \\
+        PROFIBUS DP/PA & 11 & slave & scaffold & bus scan + cyclic I/O \\
+        PROFINET & 14 & IO device & scaffold & discovery + IO exchange \\
+        Siemens S7comm & 20 & PLC & scaffold & DB/I/O diagnostics \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+Table \ref{tab:inventory} keeps the breadth story honest. The repository contains ten protocol modules, but only three are benchmarked in this paper. The remaining seven modules remain useful context because they show that the MCP adapter pattern generalizes across fieldbus, Ethernet, and broker-centric industrial stacks even when several implementations are still roadmap-driven.
+
+That breadth-versus-evidence split is deliberate. The three flagship stacks were chosen because they represent different industrial interaction styles and because their current mocks are stable enough for repeated quantitative runs. Modbus covers direct register-style access, MQTT/Sparkplug B covers broker-mediated messaging, and OPC UA covers hierarchical information-model access. The remaining stacks are better understood as evidence that the repository architecture generalizes, not as equally validated research claims.
+
+\textbf{Flagship adapters.} The Modbus adapter centers on register and coil operations, connection health checks, and guarded writes. The MQTT adapter exposes broker inspection, subscriptions, generic publishes, and Sparkplug B device-data publishes. The OPC UA adapter focuses on node browsing, node reads, writes, and multi-node access against a local mock plant. Method invocation exists in the current OPC UA prototype but was excluded from the benchmark because the current mock method path is not yet stable enough for repeatable evaluation.
+
+\textbf{Modbus details.} The current Modbus surface contains 17 tools, including register and coil reads, bulk writes, typed holding-register access, masked register writes, device-information queries, and alias-based access paths. The benchmark intentionally concentrates on the core cases most likely to appear in assistant workflows: connectivity checks, block reads, readback verification after a write, and a write-disabled safety path. This keeps the evidence aligned with the concrete adapter behavior rather than the entire nominal tool list.
+
+\textbf{MQTT/Sparkplug B details.} The MQTT adapter exposes 15 tools spanning broker status, topic subscriptions, generic publish/unsubscribe operations, and Sparkplug-specific birth, death, data, and command flows. In practice this makes the adapter suitable both for ordinary pub/sub workflows and for structured industrial telemetry updates. The benchmark therefore mixes a broker inspection task, a wildcard subscription task, a plain control publish, and a Sparkplug B DDATA publish rather than evaluating only one messaging style.
+
+\textbf{OPC UA details.} The OPC UA surface is smaller at seven tools, but the semantics are richer because browsing and variable enumeration traverse an information model rather than a flat address map. The benchmark covers point reads, browsing, writes with readback confirmation, and full variable discovery over the mock plant. This is also the family where tail latency is most informative, because the discovery path exercises a broader traversal than the single-node tasks.
+
+\textbf{Supporting console.} The repository also includes a browser-based MCP Manager UI for registering protocol adapters and issuing operator-style prompts. Figure \ref{fig:protocolmap} shows the corrected ten-protocol landscape, and Figure \ref{fig:managerui} shows the MCP Manager UI. Both figures are supporting context only; they are not part of the benchmark and are not counted as separate research contributions.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.92\columnwidth]{figures/fig3_protocol_map.png}
+    \caption{Repository protocol landscape with the three evaluated flagship adapters highlighted. This figure is supporting context, not evaluation evidence.}
+    \label{fig:protocolmap}
+\end{figure}
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.92\columnwidth]{figures/fig5_mcp_manager_ui.png}
+    \caption{MCP Manager UI used to register adapters and issue operator-style prompts. This figure is supporting context, not benchmark evidence.}
+    \label{fig:managerui}
+\end{figure}
 
 \section{Experimental Setup}
 \label{sec:setup}
 
-The evaluation targets adapter behavior rather than end-to-end LLM planning. To keep the workload reproducible, we fixed a set of representative assistant intents and executed them as deterministic MCP tool workflows against local mocks. This isolates connection handling, tool schemas, response normalization, and safety behavior from prompt variability \cite{yao2022react}.
+The evaluation targets adapter behavior rather than end-to-end LLM planning. To keep the workload reproducible, the authors fixed representative assistant intents and executed them as deterministic MCP tool workflows against local mocks. This isolates connection handling, tool schemas, response normalization, and safety behavior from prompt variability \cite{yao2022react}.
 
 \begin{table}[t]
-    \caption{Benchmark matrix used in the mock-first evaluation.}
+    \caption{Benchmark matrix for the mock-first evaluation.}
     \label{tab:tasks}
     \centering
     \scriptsize
-    \begin{tabularx}{\columnwidth}{@{}l>{\raggedright\arraybackslash}X@{}}
+    \begin{tabularx}{\columnwidth}{@{}lY@{}}
         \toprule
         Family & Task set \\
         \midrule
         Modbus & Ping; four-register read; register write/readback; guarded write denial \\
         MQTT/SB & Broker info; subscribe to \texttt{sensors/\#}; generic publish; Sparkplug B DDATA publish \\
-        OPC UA & Temperature read; actuator subtree browse; valve-position write/readback; full variable enumeration \\
+        OPC UA & Temperature read; actuator browse; valve write/readback; full variable enumeration \\
         Cross & Multi-adapter state snapshot; coordinated control sequence across Modbus, OPC UA, and MQTT \\
         \bottomrule
     \end{tabularx}
 \end{table}
 
-Table \ref{tab:tasks} summarizes the workload. The normal benchmark matrix contains 14 tasks: four Modbus tasks, four MQTT/Sparkplug B tasks, four OPC UA tasks, and two cross-protocol tasks. The cross-protocol tasks exercise a multi-adapter state snapshot and a coordinated control sequence spanning all three flagship stacks. Each task was repeated 10 times, yielding 140 normal runs and 200 tool calls overall.
+Table \ref{tab:tasks} summarizes the workload. The benchmark contains 14 tasks: four Modbus tasks, four MQTT/Sparkplug B tasks, four OPC UA tasks, and two cross-protocol tasks. Each task was repeated 10 times, yielding 140 normal runs and 200 tool calls overall. The benchmark also injected one transient outage per flagship stack by stopping the mock or broker, confirming an operation failure, restarting the endpoint, and re-running a healthy operation. Each recovery scenario was repeated 10 times for a total of 30 restart trials.
 
-The workload includes one guarded-write scenario in which the Modbus adapter is configured read-only and is expected to return a structured denial rather than perform the write. Task success and tool-call success are therefore judged against a task-specific oracle, not simply against \texttt{success=true}. A structured write denial counts as correct behavior for that task.
+\begin{table}[t]
+    \caption{Benchmark runtime configuration used in the paper.}
+    \label{tab:runtime}
+    \centering
+    \scriptsize
+    \begin{tabularx}{\columnwidth}{@{}lYY@{}}
+        \toprule
+        Family & Mock endpoint & Fault injected in recovery suite \\
+        \midrule
+        Modbus & TCP mock at \texttt{127.0.0.1:1502} & Stop mock, confirm failed register read, restart, then reopen healthy session \\
+        MQTT/SB & Local broker at \texttt{127.0.0.1:1883} & Stop broker, confirm failed publish, restart, then reopen healthy session \\
+        OPC UA & Local OPC UA endpoint & Stop server, confirm failed node read, restart, then reopen healthy session \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
 
-The benchmark harness starts the local mocks, opens MCP stdio sessions for each adapter, executes the workload, and records JSON results from the shared response envelope. We measured task success, tool-call success, median latency, p95 latency, and retry counts from those records. We also injected one transient outage per flagship stack by stopping the mock or broker, confirming an operation failure, restarting the endpoint, and re-running a healthy operation. Each recovery scenario was repeated 10 times for a total of 30 restart trials.
+All benchmarked adapters were launched as local stdio MCP servers. The Modbus stack targeted the TCP mock at \texttt{127.0.0.1:1502}, the MQTT adapter targeted the local broker at \texttt{mqtt://127.0.0.1:1883}, and the OPC UA adapter targeted the local mock endpoint at \texttt{opc.tcp://127.0.0.1:4840}. The benchmark harness opened dedicated sessions for the read-write Modbus configuration, the read-only Modbus configuration, MQTT, and OPC UA, then executed the normal and recovery suites in a fixed order.
+
+The normal runs also use fixed value patterns so task validation is deterministic. For example, the Modbus write/readback task writes \texttt{40 + repetition}, the Sparkplug task publishes a single temperature metric with \texttt{20.0 + repetition}, and the OPC UA valve task writes \texttt{25.0 + repetition}. The cross-protocol control task uses a fixed Modbus write, an OPC UA boolean write, and a control-topic publish, making the end-to-end sequence stable enough for repeated latency summaries.
+
+The harness records raw tool responses and then derives family-level, task-level, and recovery-phase summaries from the same JSON artifacts. That matters because the tables and figures in the paper are not hand-estimated numbers copied from logs; they are deterministic summaries generated from the same benchmark pass.
+
+The harness also performs one reproducibility step that matters for OPC UA in particular: it discovers the mock node IDs directly from the adapter before the normal suite runs. This avoids baking transient namespace assumptions into the benchmark script. The resulting workflow is slightly more conservative than a hand-wired benchmark, but it better matches how an assistant would learn the exposed plant model in practice.
+
+The guarded-write scenario is important because correctness is not equivalent to \texttt{success=true}. For the read-only Modbus configuration, a structured write denial is the expected outcome and is counted as a successful task result. This lets the benchmark reward safety behavior rather than penalize it.
+
+\smallskip
+\noindent\textbf{Workflow example (X1).} An operator asks for a fast cross-system snapshot before escalating a maintenance event. The assistant issues three fixed tool calls: a Modbus sensor-block read, an OPC UA multi-node read, and an MQTT broker inspection. The resulting state bundle confirms that the transport links are healthy and that the key process values can be read through all three adapters in one short sequence. This is representative of the orchestration level that the paper evaluates: tool-level coordination across adapters, not autonomous control.
+\smallskip
 
 \section{Results and Limitations}
 \label{sec:results}
 
 \begin{table}[t]
-    \caption{Family-level benchmark results. Cross-protocol rows aggregate the two multi-adapter tasks only.}
+    \caption{Family-level results from the fresh benchmark pass. Cross-protocol rows aggregate the two multi-adapter tasks only.}
     \label{tab:results}
     \centering
     \scriptsize
@@ -140,41 +225,84 @@ The benchmark harness starts the local mocks, opens MCP stdio sessions for each 
         Family & Tasks & Task & Tool & Med. & p95 & Rec. \\
         &  & (\%) & (\%) & (ms) & (ms) & (s) \\
         \midrule
-        Modbus & 4 & 100 & 100 & 1.47 & 3.62 & 4.64 \\
-        MQTT/SB & 4 & 100 & 100 & 1.76 & 2.30 & 3.45 \\
-        OPC UA & 4 & 100 & 100 & 6.05 & 114.86 & 6.12 \\
-        Cross & 2 & 100 & 100 & 6.58 & 7.73 & -- \\
+        Modbus & 4 & 100 & 100 & 1.50 & 3.18 & 4.63 \\
+        MQTT/SB & 4 & 100 & 100 & 1.88 & 2.00 & 3.50 \\
+        OPC UA & 4 & 100 & 100 & 6.04 & 113.23 & 6.10 \\
+        Cross & 2 & 100 & 100 & 6.93 & 7.51 & -- \\
         \bottomrule
     \end{tabular}
 \end{table}
 
-Table \ref{tab:results} shows clean success rates across the full benchmark: 140 of 140 normal task executions succeeded, and all 200 tool calls matched their expected outcomes. No retries were required in the normal suite. Modbus and MQTT/Sparkplug B remained in the low single-digit millisecond range for both median and p95 latency. Cross-protocol workflows also completed reliably, showing that the common tool surface is usable for simple multi-adapter orchestration.
+Table \ref{tab:results} shows clean success rates across the full benchmark: 140 of 140 normal task executions succeeded, and all 200 tool calls matched their expected outcomes. No retries were required in the normal suite. Modbus and MQTT/Sparkplug B remained in the low single-digit millisecond range for both median and p95 latency. Cross-protocol workflows also completed reliably, showing that the common tool surface is usable for short multi-adapter sequences.
 
-Task-level behavior is also informative. Modbus medians ranged from 1.19 ms for a simple ping to 2.85 ms for write-and-readback validation. MQTT/Sparkplug B stayed tightly grouped between 1.72 and 1.80 ms across broker inspection, subscription, and publish operations. Cross-protocol medians were 6.43 ms and 6.74 ms for the control and snapshot tasks, respectively.
+The Modbus family is the most tightly clustered. All four tasks completed with 100\% success, and even the readback verification path remained below 3.2\,ms at p95. The guarded-write task is particularly useful because it shows that safety checks do not need to be slow to be explicit: the adapter can deny the write in 1.43\,ms median while still returning a structured result that an assistant can interpret correctly.
 
-OPC UA showed the largest tail latency. The baseline node read, browse, and write-readback tasks remained modest at 2.24 ms, 7.29 ms, and 4.50 ms median latency, but the variable-enumeration task reached 108.94 ms median and drove the family p95 to 114.86 ms. This is consistent with the information-model breadth of OPC UA rather than a generalized slowdown across all OPC UA operations.
+MQTT/Sparkplug B is similarly compact, but for a different reason. The measured tasks mostly cover adapter interaction with a local broker and mock publisher rather than downstream delivery latency to remote subscribers. As a result, the benchmark reflects broker inspection, topic registration, and publish handoff through the MCP layer, which is exactly the scope this paper claims.
+
+OPC UA is where the value of a task-level view becomes obvious. The node read, subtree browse, and write/readback tasks remain in a low-to-mid single-digit millisecond band, but full variable enumeration is two orders of magnitude slower. That is not a bug in the benchmark. It reflects that the adapter is traversing and materializing the full mock information model, which is a meaningfully broader operation than reading a single node.
+
+The cross-protocol tasks remain close to 7\,ms median even though they chain three adapters in a row. This suggests that the response-envelope approach does not impose noticeable overhead for short local workflows. It should not be overinterpreted as a plant-wide orchestration latency claim, because all three endpoints are local mocks and the benchmark does not include network jitter, gateway hops, or operator approval delays.
 
 \begin{figure}[t]
     \centering
-    \includegraphics[width=\columnwidth]{generated/flagship_recovery_latency.png}
-    \caption{Median end-to-end recovery latency after forced endpoint restarts. All three flagship stacks recovered in 10 of 10 trials and detected the outage in 10 of 10 trials.}
+    \includegraphics[width=\columnwidth]{figures/fig4_recovery_breakdown.png}
+    \caption{Recovery-phase breakdown over 10 restart trials per flagship adapter.}
     \label{fig:recovery}
 \end{figure}
 
-Figure \ref{fig:recovery} summarizes the restart experiments. All three flagship stacks recovered in every trial after a forced outage. The measured recovery times are dominated by mock or broker restart time plus reconnection, not by the steady-state tool latency shown in Table \ref{tab:results}.
+The recovery experiments reveal different failure signatures. MQTT fails almost immediately when the broker is unavailable, with only 0.01\,s spent in the failed-call phase and 3.49\,s in restart-to-healthy recovery. Modbus spends 0.61\,s detecting the outage and 4.02\,s returning to a healthy response. OPC UA shows the opposite pattern from MQTT: 4.01\,s are spent in the failed-call phase before the endpoint is judged unavailable, followed by 2.09\,s to restart and return a healthy read. This suggests that future hardening work should tune timeout and reconnect policy per protocol rather than enforce one global default.
 
-The failure modes also differed by stack. MQTT typically failed fast because the adapter could detect a disconnected broker immediately, while OPC UA recovery was slower because the failed read path waited on a longer timeout before the restarted server became reachable again. This suggests that future hardening work should tune timeout and reconnect policy per protocol rather than enforce a single global default.
+\begin{table*}[t]
+    \caption{Per-task latency breakdown from the same benchmark pass.}
+    \label{tab:taskbreakdown}
+    \centering
+    \scriptsize
+    \setlength{\tabcolsep}{4pt}
+    \begin{tabularx}{\textwidth}{@{}llYcc@{}}
+        \toprule
+        ID & Family & Operation & Median (ms) & p95 (ms) \\
+        \midrule
+        M1 & Modbus & Adapter ping and connectivity check & 1.28 & 3.03 \\
+        M2 & Modbus & Four-register sensor block read & 1.56 & 1.71 \\
+        M3 & Modbus & Holding-register write and readback verification & 3.08 & 3.13 \\
+        M4 & Modbus & Guarded write denial with writes disabled & 1.43 & 2.79 \\
+        \midrule
+        Q1 & MQTT & Broker inspection through MCP & 1.89 & 3.57 \\
+        Q2 & MQTT & Topic subscription to \texttt{sensors/\#} & 1.89 & 2.10 \\
+        Q3 & MQTT & Standard control publish & 1.88 & 1.96 \\
+        Q4 & MQTT & Sparkplug B DDATA publish & 1.78 & 1.90 \\
+        \midrule
+        O1 & OPC UA & Temperature node read & 2.30 & 2.68 \\
+        O2 & OPC UA & Actuator subtree browse & 7.49 & 7.89 \\
+        O3 & OPC UA & Valve-position write and readback & 4.63 & 4.86 \\
+        O4 & OPC UA & Full mock-plant variable enumeration & 111.73 & 114.05 \\
+        \midrule
+        X1 & Cross & Multi-adapter state snapshot & 7.04 & 7.62 \\
+        X2 & Cross & Coordinated control sequence & 6.68 & 7.00 \\
+        \bottomrule
+    \end{tabularx}
+\end{table*}
 
-\textbf{Limitations.} The evidence is intentionally narrow. This is a mock-only study, not a production deployment evaluation, not a cybersecurity validation, and not evidence that AI agents can safely perform closed-loop autonomous control on plant equipment. The benchmark also omits human baselines and excludes OPC UA method calls because the current prototype mock does not yet support them reliably enough for repeatable measurement.
+Table \ref{tab:taskbreakdown} makes the tail behavior clearer than the family summary alone. Modbus remains tightly clustered even when a readback verification or guarded-write rejection is required. MQTT/Sparkplug B shows similarly compact latency. OPC UA is different: the temperature read, browse, and write/readback tasks remain moderate, but full variable enumeration reaches 111.73\,ms median and dominates the family p95. That is consistent with the information-model breadth of OPC UA rather than a generalized slowdown across all OPC UA operations.
+
+The recovery figure adds another dimension to that story. Modbus and MQTT spend most of their median recovery time in restart-to-healthy behavior rather than in the failed-call path, which means the adapters detect the outage quickly and then wait for the local endpoint to come back. OPC UA is reversed: a large fraction of total time is spent deciding that the failed read is truly unavailable before the restarted server can be used again. This is a concrete, adapter-level insight that would have been hidden by a single total-recovery bar.
+
+More broadly, the results support the paper's narrower systems claim. The benchmark does not prove that an LLM will always select the right tool, but it does show that once the correct tool is chosen the adapter layer provides predictable latency, explicit negative outcomes, and repeatable reconnect behavior. That is a meaningful prerequisite for any later study that evaluates operator-facing assistants on real plant equipment.
+
+\textbf{Limitations.} The evidence is intentionally narrow. This is a mock-only study, not a production deployment evaluation, not a cybersecurity validation, and not evidence that AI agents can safely perform closed-loop autonomous control on plant equipment. The benchmark omits human baselines and excludes OPC UA method calls because the current prototype mock does not yet support them reliably enough for repeatable measurement.
 
 \section{Related Work}
 \label{sec:related}
 
-OT/IT convergence literature has long identified heterogeneous field protocols as a core integration problem for Industry 4.0 systems \cite{xu2018industry4,wollschlaeger2017future}. OPC UA and MQTT are widely used normalization layers in modern industrial software, but each solves only part of the interoperability problem because brownfield plants still depend on multiple legacy and vendor-specific stacks \cite{cavalieri2013opcua,mishra2020mqtt}.
+Industry 4.0 and cyber-physical manufacturing literature has consistently treated heterogeneous connectivity as a foundational systems problem rather than a peripheral implementation detail \cite{lasi2014industry40,xu2018industry4,wollschlaeger2017future,lee2015cps,monostori2016cps,zhong2017intelligent,tilbury2019cpms}. Those works motivate why assistant-facing industrial tooling cannot assume one canonical protocol stack or one clean greenfield deployment path.
 
-Recent LLM-agent work emphasizes reasoning plus external tool use rather than monolithic natural-language interfaces \cite{yao2022react}. MCP contributes a practical, schema-driven interface for tool discovery and invocation \cite{anthropic2024mcp}. Our contribution is not a new tool-use protocol; it is the adapter pattern, shared safety conventions, and benchmark evidence needed to map that protocol into industrial operations.
+Within industrial communication research, OPC UA and MQTT are widely used as normalization layers, but the interoperability story remains incomplete in brownfield settings. Prior work has examined OPC UA performance, MQTT adoption in IoT middleware, gateway-level interoperability, and field-level plug-and-work integration \cite{cavalieri2013opcua,mishra2020mqtt,cavalieri2021onem2m,buechter2022plug}. These studies improve system-to-system interoperability, yet they typically stop at middleware, gateway, or device integration boundaries rather than exposing operations as schema-discoverable tool contracts for an AI assistant.
 
-The mock-first workflow is adjacent to simulation and digital-twin practices used for industrial software validation \cite{fuller2020digital}. In contrast to full digital-twin objectives, the focus here is narrower: verify adapter behavior, structured failures, and restart recovery before introducing real equipment.
+Industrial middleware, cyber-physical manufacturing systems, and digital-twin work address adjacent concerns such as service composition, plant modeling, and deployment-time validation \cite{tilbury2019cpms,fuller2020digital,lu2020digitaltwin}. \system\ does not compete with those layers. It sits closer to the assistant and packages protocol actions into a common tool surface while leaving historian, SCADA, and plant-model responsibilities outside the paper's scope. The mock-first workflow is closest to digital-twin and virtual validation practices, but the goal here is narrower: verify adapter semantics, guarded failures, and restart behavior before introducing real equipment.
+
+Recent LLM-agent research has moved from reasoning-action loops toward explicit tool learning over large API surfaces \cite{yao2022react,schick2023toolformer,patil2023gorilla,qiao2024executionfeedback}. MCP contributes a practical schema for tool discovery and invocation \cite{anthropic2024mcp}, but it does not prescribe how industrial protocols should be translated, guarded, or benchmarked. The contribution is therefore not a new tool-use framework. It is an MCP-to-OT adapter pattern with shared safety conventions and reproducible mock-based evaluation for a narrowly defined industrial setting.
+
+This comparison clarifies the contribution boundary. A full digital-twin paper would claim model fidelity or synchronization strategy; a generic agent paper would emphasize tool selection at scale; an industrial middleware paper would prioritize interoperability between production systems. \system\ instead focuses on a smaller but necessary substrate: deterministic, assistant-facing protocol adapters whose behavior can be measured before any real deployment study begins.
 
 \section{Conclusion}
 \label{sec:conclusion}

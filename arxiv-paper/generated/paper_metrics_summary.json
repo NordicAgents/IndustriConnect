@@ -1,0 +1,238 @@
+{
+  "generated_from": "arxiv-paper/generated/flagship_benchmark_results.json",
+  "protocol_rows": [
+    {
+      "protocol": "Modbus",
+      "tool_count": 17,
+      "evaluation_status": "evaluated flagship",
+      "mock_endpoint": "TCP mock device",
+      "operation_class": "register and coil I/O"
+    },
+    {
+      "protocol": "MQTT + Sparkplug B",
+      "tool_count": 15,
+      "evaluation_status": "evaluated flagship",
+      "mock_endpoint": "broker simulator",
+      "operation_class": "publish, subscribe, Sparkplug DDATA"
+    },
+    {
+      "protocol": "OPC UA",
+      "tool_count": 7,
+      "evaluation_status": "evaluated flagship",
+      "mock_endpoint": "local OPC UA server",
+      "operation_class": "browse, node read/write"
+    },
+    {
+      "protocol": "BACnet/IP",
+      "tool_count": 7,
+      "evaluation_status": "roadmap/scaffold",
+      "mock_endpoint": "BACnet mock device",
+      "operation_class": "object property access"
+    },
+    {
+      "protocol": "DNP3",
+      "tool_count": 8,
+      "evaluation_status": "roadmap/scaffold",
+      "mock_endpoint": "mock outstation",
+      "operation_class": "point poll and control"
+    },
+    {
+      "protocol": "EtherCAT",
+      "tool_count": 14,
+      "evaluation_status": "roadmap/scaffold",
+      "mock_endpoint": "mock slave",
+      "operation_class": "PDO and SDO access"
+    },
+    {
+      "protocol": "EtherNet/IP",
+      "tool_count": 17,
+      "evaluation_status": "roadmap/scaffold",
+      "mock_endpoint": "mock PLC",
+      "operation_class": "controller tag access"
+    },
+    {
+      "protocol": "PROFIBUS DP/PA",
+      "tool_count": 11,
+      "evaluation_status": "roadmap/scaffold",
+      "mock_endpoint": "mock slave",
+      "operation_class": "bus scan and cyclic I/O"
+    },
+    {
+      "protocol": "PROFINET",
+      "tool_count": 14,
+      "evaluation_status": "roadmap/scaffold",
+      "mock_endpoint": "mock IO device",
+      "operation_class": "discovery and IO exchange"
+    },
+    {
+      "protocol": "Siemens S7comm",
+      "tool_count": 20,
+      "evaluation_status": "roadmap/scaffold",
+      "mock_endpoint": "mock PLC",
+      "operation_class": "DB, I/O, diagnostics"
+    }
+  ],
+  "family_rows": {
+    "Modbus": {
+      "tasks": 4,
+      "task_success_rate": 1.0,
+      "tool_call_success_rate": 1.0,
+      "median_latency_ms": 1.499,
+      "p95_latency_ms": 3.18,
+      "total_retries": 0
+    },
+    "MQTT": {
+      "tasks": 4,
+      "task_success_rate": 1.0,
+      "tool_call_success_rate": 1.0,
+      "median_latency_ms": 1.875,
+      "p95_latency_ms": 1.997,
+      "total_retries": 0
+    },
+    "OPC UA": {
+      "tasks": 4,
+      "task_success_rate": 1.0,
+      "tool_call_success_rate": 1.0,
+      "median_latency_ms": 6.037,
+      "p95_latency_ms": 113.232,
+      "total_retries": 0
+    },
+    "Cross-protocol": {
+      "tasks": 2,
+      "task_success_rate": 1.0,
+      "tool_call_success_rate": 1.0,
+      "median_latency_ms": 6.934,
+      "p95_latency_ms": 7.51,
+      "total_retries": 0
+    }
+  },
+  "task_rows": [
+    {
+      "task_id": "M1",
+      "family": "Modbus",
+      "description": "Ping the adapter and confirm the TCP mock is reachable.",
+      "median_latency_ms": 1.284,
+      "p95_latency_ms": 3.03
+    },
+    {
+      "task_id": "M2",
+      "family": "Modbus",
+      "description": "Read a four-register sensor block from the Modbus mock.",
+      "median_latency_ms": 1.556,
+      "p95_latency_ms": 1.708
+    },
+    {
+      "task_id": "M3",
+      "family": "Modbus",
+      "description": "Write a holding register and read it back for verification.",
+      "median_latency_ms": 3.075,
+      "p95_latency_ms": 3.132
+    },
+    {
+      "task_id": "M4",
+      "family": "Modbus",
+      "description": "Attempt a write with writes disabled and expect a guarded rejection.",
+      "median_latency_ms": 1.425,
+      "p95_latency_ms": 2.791
+    },
+    {
+      "task_id": "Q1",
+      "family": "MQTT",
+      "description": "Inspect broker connectivity through the MCP adapter.",
+      "median_latency_ms": 1.893,
+      "p95_latency_ms": 3.568
+    },
+    {
+      "task_id": "Q2",
+      "family": "MQTT",
+      "description": "Subscribe to the mock sensor topic namespace.",
+      "median_latency_ms": 1.891,
+      "p95_latency_ms": 2.1
+    },
+    {
+      "task_id": "Q3",
+      "family": "MQTT",
+      "description": "Publish a standard MQTT control payload.",
+      "median_latency_ms": 1.879,
+      "p95_latency_ms": 1.958
+    },
+    {
+      "task_id": "Q4",
+      "family": "MQTT",
+      "description": "Publish a Sparkplug B DDATA update for the mock device.",
+      "median_latency_ms": 1.781,
+      "p95_latency_ms": 1.899
+    },
+    {
+      "task_id": "O1",
+      "family": "OPC UA",
+      "description": "Read the temperature sensor variable from the OPC UA mock plant.",
+      "median_latency_ms": 2.303,
+      "p95_latency_ms": 2.679
+    },
+    {
+      "task_id": "O2",
+      "family": "OPC UA",
+      "description": "Browse the actuator subtree in the mock plant.",
+      "median_latency_ms": 7.488,
+      "p95_latency_ms": 7.894
+    },
+    {
+      "task_id": "O3",
+      "family": "OPC UA",
+      "description": "Write the valve-position variable and confirm the new value.",
+      "median_latency_ms": 4.627,
+      "p95_latency_ms": 4.862
+    },
+    {
+      "task_id": "O4",
+      "family": "OPC UA",
+      "description": "Enumerate the mock plant variables through the adapter.",
+      "median_latency_ms": 111.726,
+      "p95_latency_ms": 114.05
+    },
+    {
+      "task_id": "X1",
+      "family": "Cross-protocol",
+      "description": "Collect a multi-adapter state snapshot across Modbus, OPC UA, and MQTT.",
+      "median_latency_ms": 7.038,
+      "p95_latency_ms": 7.621
+    },
+    {
+      "task_id": "X2",
+      "family": "Cross-protocol",
+      "description": "Execute a coordinated multi-adapter control sequence.",
+      "median_latency_ms": 6.675,
+      "p95_latency_ms": 6.996
+    }
+  ],
+  "recovery_phase_rows": [
+    {
+      "family": "Modbus",
+      "outage_detection_rate": 1.0,
+      "recovery_success_rate": 1.0,
+      "median_failure_phase_ms": 607.616,
+      "median_restart_to_healthy_ms": 4021.02,
+      "median_healthy_call_ms": 4.965,
+      "median_total_trial_ms": 4628.966
+    },
+    {
+      "family": "MQTT",
+      "outage_detection_rate": 1.0,
+      "recovery_success_rate": 1.0,
+      "median_failure_phase_ms": 5.492,
+      "median_restart_to_healthy_ms": 3490.153,
+      "median_healthy_call_ms": 5.877,
+      "median_total_trial_ms": 3495.636
+    },
+    {
+      "family": "OPC UA",
+      "outage_detection_rate": 1.0,
+      "recovery_success_rate": 1.0,
+      "median_failure_phase_ms": 4009.882,
+      "median_restart_to_healthy_ms": 2093.981,
+      "median_healthy_call_ms": 3.433,
+      "median_total_trial_ms": 6103.81
+    }
+  ]
+}

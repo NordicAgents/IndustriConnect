@@ -6,40 +6,61 @@
 \newlabel{sec:introduction}{{I}{1}{}{section.1}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {II}Design Goals and Architecture}{1}{}\protected@file@percent }
 \newlabel{sec:architecture}{{II}{1}{}{section.2}{}}
-\citation{yao2022react}
 \@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces \textsc  {IndustriConnect}\ exposes industrial protocol clients as MCP servers so an AI assistant can invoke them through a common tool interface while targeting either mocks or real devices.}}{2}{}\protected@file@percent }
 \newlabel{fig:architecture}{{1}{2}{}{figure.1}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {I}{\ignorespaces Shared response-envelope fields used across the benchmarked adapters.}}{2}{}\protected@file@percent }
+\newlabel{tab:envelope}{{I}{2}{}{table.1}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {II}{\ignorespaces Repository protocol inventory. Tool counts come from registered handlers in the benchmark pass.}}{2}{}\protected@file@percent }
+\newlabel{tab:inventory}{{II}{2}{}{table.2}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {III}Prototype Implementation}{2}{}\protected@file@percent }
 \newlabel{sec:implementation}{{III}{2}{}{section.3}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {I}{\ignorespaces Protocol inventory generated from registered MCP tool handlers.}}{2}{}\protected@file@percent }
-\newlabel{tab:inventory}{{I}{2}{}{table.1}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {II}{\ignorespaces Benchmark matrix used in the mock-first evaluation.}}{2}{}\protected@file@percent }
-\newlabel{tab:tasks}{{II}{2}{}{table.2}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {IV}Experimental Setup}{2}{}\protected@file@percent }
-\newlabel{sec:setup}{{IV}{2}{}{section.4}{}}
-\citation{xu2018industry4,wollschlaeger2017future}
-\citation{cavalieri2013opcua,mishra2020mqtt}
 \citation{yao2022react}
+\@writefile{toc}{\contentsline {section}{\numberline {IV}Experimental Setup}{3}{}\protected@file@percent }
+\newlabel{sec:setup}{{IV}{3}{}{section.4}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Repository protocol landscape with the three evaluated flagship adapters highlighted. This figure is supporting context, not evaluation evidence.}}{3}{}\protected@file@percent }
+\newlabel{fig:protocolmap}{{2}{3}{}{figure.2}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces MCP Manager UI used to register adapters and issue operator-style prompts. This figure is supporting context, not benchmark evidence.}}{3}{}\protected@file@percent }
+\newlabel{fig:managerui}{{3}{3}{}{figure.3}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {III}{\ignorespaces Benchmark matrix for the mock-first evaluation.}}{4}{}\protected@file@percent }
+\newlabel{tab:tasks}{{III}{4}{}{table.3}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {IV}{\ignorespaces Benchmark runtime configuration used in the paper.}}{4}{}\protected@file@percent }
+\newlabel{tab:runtime}{{IV}{4}{}{table.4}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {V}{\ignorespaces Family-level results from the fresh benchmark pass. Cross-protocol rows aggregate the two multi-adapter tasks only.}}{4}{}\protected@file@percent }
+\newlabel{tab:results}{{V}{4}{}{table.5}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {V}Results and Limitations}{4}{}\protected@file@percent }
+\newlabel{sec:results}{{V}{4}{}{section.5}{}}
+\citation{lasi2014industry40,xu2018industry4,wollschlaeger2017future,lee2015cps,monostori2016cps,zhong2017intelligent,tilbury2019cpms}
+\citation{cavalieri2013opcua,mishra2020mqtt,cavalieri2021onem2m,buechter2022plug}
+\citation{tilbury2019cpms,fuller2020digital,lu2020digitaltwin}
+\citation{yao2022react,schick2023toolformer,patil2023gorilla,qiao2024executionfeedback}
 \citation{anthropic2024mcp}
-\citation{fuller2020digital}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Recovery-phase breakdown over 10 restart trials per flagship adapter.}}{5}{}\protected@file@percent }
+\newlabel{fig:recovery}{{4}{5}{}{figure.4}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {VI}Related Work}{5}{}\protected@file@percent }
+\newlabel{sec:related}{{VI}{5}{}{section.6}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {VII}Conclusion}{5}{}\protected@file@percent }
+\newlabel{sec:conclusion}{{VII}{5}{}{section.7}{}}
 \bibstyle{IEEEtran}
 \bibdata{references}
 \bibcite{xu2018industry4}{1}
-\@writefile{lot}{\contentsline {table}{\numberline {III}{\ignorespaces Family-level benchmark results. Cross-protocol rows aggregate the two multi-adapter tasks only.}}{3}{}\protected@file@percent }
-\newlabel{tab:results}{{III}{3}{}{table.3}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Median end-to-end recovery latency after forced endpoint restarts. All three flagship stacks recovered in 10 of 10 trials and detected the outage in 10 of 10 trials.}}{3}{}\protected@file@percent }
-\newlabel{fig:recovery}{{2}{3}{}{figure.2}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {V}Results and Limitations}{3}{}\protected@file@percent }
-\newlabel{sec:results}{{V}{3}{}{section.5}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {VI}Related Work}{3}{}\protected@file@percent }
-\newlabel{sec:related}{{VI}{3}{}{section.6}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {VII}Conclusion}{3}{}\protected@file@percent }
-\newlabel{sec:conclusion}{{VII}{3}{}{section.7}{}}
 \bibcite{wollschlaeger2017future}{2}
 \bibcite{anthropic2024mcp}{3}
 \bibcite{cavalieri2013opcua}{4}
 \bibcite{mishra2020mqtt}{5}
 \bibcite{yao2022react}{6}
-\bibcite{fuller2020digital}{7}
-\@writefile{toc}{\contentsline {section}{References}{4}{}\protected@file@percent }
-\gdef \@abspage@last{4}
+\bibcite{lasi2014industry40}{7}
+\bibcite{lee2015cps}{8}
+\bibcite{monostori2016cps}{9}
+\bibcite{zhong2017intelligent}{10}
+\bibcite{tilbury2019cpms}{11}
+\bibcite{cavalieri2021onem2m}{12}
+\bibcite{buechter2022plug}{13}
+\bibcite{fuller2020digital}{14}
+\bibcite{lu2020digitaltwin}{15}
+\bibcite{schick2023toolformer}{16}
+\bibcite{patil2023gorilla}{17}
+\bibcite{qiao2024executionfeedback}{18}
+\@writefile{lot}{\contentsline {table}{\numberline {VI}{\ignorespaces Per-task latency breakdown from the same benchmark pass.}}{6}{}\protected@file@percent }
+\newlabel{tab:taskbreakdown}{{VI}{6}{}{table.6}{}}
+\@writefile{toc}{\contentsline {section}{References}{6}{}\protected@file@percent }
+\gdef \@abspage@last{6}
