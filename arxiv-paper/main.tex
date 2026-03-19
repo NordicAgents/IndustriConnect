@@ -52,7 +52,7 @@ midhun@industriagents.com}
 \maketitle
 
 \begin{abstract}
-AI assistants can decompose multi-step workflows, but they do not natively speak industrial protocols such as Modbus, MQTT/Sparkplug B, or OPC UA. This paper presents \system, a suite of Model Context Protocol (MCP) adapters that expose industrial operations as schema-discoverable AI tools while preserving protocol-specific connectivity and safety controls. The system uses a common response envelope and a mock-first workflow so adapter behavior can be exercised locally before connecting to plant equipment. The paper evaluates the flagship adapters through a two-layer evaluation model: a deterministic benchmark covering normal, fault-injected, stress, and recovery scenarios, and a quantitative LLM assessment that measures tool discovery, selection, parameter correctness, and error interpretation accuracy. The benchmark comprises \totalRuns{} runs (\totalNormalRuns{} normal, \totalFaultRuns{} fault-injected, \totalStressRuns{} stress, \totalRecoveryTrials{} recovery trials) and \totalToolCalls{} tool calls across 7 fault scenarios and 12 stress scenarios. The normal suite achieved full success, the fault suite confirmed structured error handling with adapter-level uint16 range validation, the stress suite identified concurrency boundaries, and the LLM assessment produced quantitative accuracy metrics across two model sizes. Same-session recovery after endpoint restart is demonstrated for all three protocols. The results position \system\ as a reproducible prototype for AI-assisted industrial operations with evidence spanning adapter correctness, concurrency behavior, and assistant-level usability.
+AI assistants can decompose multi-step workflows, but they do not natively speak industrial protocols such as Modbus, MQTT/Sparkplug B, or OPC UA. This paper presents \system, a prototype suite of Model Context Protocol (MCP) adapters that expose industrial operations as schema-discoverable AI tools while preserving protocol-specific connectivity and safety controls. The system uses a common response envelope and a mock-first workflow so adapter behavior can be exercised locally before connecting to plant equipment. A deterministic benchmark covering normal, fault-injected, stress, and recovery scenarios evaluates the flagship adapters. The benchmark comprises \totalRuns{} runs (\totalNormalRuns{} normal, \totalFaultRuns{} fault-injected, \totalStressRuns{} stress, \totalRecoveryTrials{} recovery trials) and \totalToolCalls{} tool calls across 7 fault scenarios and 12 stress scenarios. The normal suite achieved full success, the fault suite confirmed structured error handling with adapter-level uint16 range validation, and the stress suite identified concurrency boundaries. Same-session recovery after endpoint restart is demonstrated for all three protocols. The results provide evidence spanning adapter correctness, concurrency behavior, and structured error handling for AI-assisted industrial operations.
 \end{abstract}
 
 \section{Introduction}
@@ -66,15 +66,14 @@ That gap is especially visible in brownfield environments. Real plants often beg
 
 This paper reframes \system\ as a bounded systems contribution: a prototype MCP-to-OT adapter architecture with a mock-first evaluation workflow. The paper does not claim a complete industrial platform, a new LLM reasoning method, or production deployment evidence. Instead, it focuses on the flagship adapters for Modbus, MQTT/Sparkplug B, and OPC UA while retaining seven additional protocol modules as ecosystem breadth.
 
-The manuscript makes four contributions:
+The manuscript makes three contributions:
 \begin{enumerate}
     \item A practical MCP-to-OT adapter architecture that standardizes tool discovery and response handling across heterogeneous industrial protocols.
     \item A mock-first methodology for validating adapter behavior, write guards, and restart recovery, extended with fault injection and stress testing to expose error-handling and concurrency boundaries without requiring physical devices.
-    \item A reproducible two-layer evaluation on Modbus, MQTT/Sparkplug B, and OPC UA comprising normal, fault-injected, stress, and recovery suites using deterministic workloads with statistical variance reporting.
-    \item A quantitative LLM assessment measuring tool discovery recall, selection accuracy, parameter correctness, and error interpretation across two model sizes, connecting the adapter work back to its stated AI-assistant motivation.
+    \item A reproducible deterministic evaluation on Modbus, MQTT/Sparkplug B, and OPC UA comprising normal, fault-injected, stress, and recovery suites using deterministic workloads with statistical variance reporting.
 \end{enumerate}
 
-The evaluation follows a two-layer design. The first layer is a deterministic benchmark that exercises adapter behavior under normal operation, deliberate fault conditions, stress scenarios, and endpoint restart. The second layer is a quantitative LLM assessment that measures whether AI assistants can discover, select, parameterize, and interpret results from the tool surface. Together, the two layers show that the adapters are both mechanically correct and practically usable by the AI clients they are designed to serve.
+The evaluation uses a deterministic benchmark that exercises adapter behavior under normal operation, deliberate fault conditions, stress scenarios, and endpoint restart.
 
 \section{Design Goals and Architecture}
 \label{sec:architecture}
@@ -163,6 +162,8 @@ That breadth-versus-evidence split is deliberate. The three flagship stacks were
 
 \textbf{OPC UA details.} The OPC UA surface is smaller at \opcuaToolCount{} tools, but the semantics are richer because browsing and variable enumeration traverse an information model rather than a flat address map. The adapter includes reconnection logic: a liveness probe checks the ServerStatus node before each operation, and on failure the stale client is disconnected and a fresh connection is established. The benchmark covers point reads, browsing, writes with readback confirmation, and full variable discovery over the mock plant.
 
+\textbf{Mock endpoint fidelity.} Each flagship mock simulates enough plant-floor state for the benchmark workload. The Modbus mock provisions 100 holding registers (valve\_position, heater\_power, fan\_speed, conveyor\_speed, command words), 100 input registers (temperature, pressure, flow\_rate, tank\_level, vibration, pH, humidity, motor\_speed, production counters), 100 coils, and 100 discrete inputs, with a 1\,Hz simulation loop that models inter-variable influence (heater power affects temperature, pump state affects pressure and flow). The MQTT mock combines an aedes broker with a Sparkplug B edge-node simulator that publishes NBIRTH, DBIRTH, and periodic DDATA messages for two devices; device metrics follow sinusoidal variation and all Sparkplug payloads use protobuf encoding. The OPC UA mock exposes 8 read-only sensor variables, 6 read-write actuator variables, system-status variables, and 5 callable methods under a single namespace, updated every second with state-driven dynamics mirroring the Modbus model.
+
 \textbf{Supporting console.} The repository also includes a browser-based MCP Manager UI for registering protocol adapters and issuing operator-style prompts. Figure \ref{fig:protocolmap} shows the corrected ten-protocol landscape, and Figure \ref{fig:managerui} shows the MCP Manager UI. Both figures are supporting context only; they are not part of the benchmark and are not counted as separate research contributions.
 
 \begin{figure}[t]
@@ -185,7 +186,7 @@ That breadth-versus-evidence split is deliberate. The three flagship stacks were
 The evaluation targets adapter behavior rather than end-to-end LLM planning. To keep the workload reproducible, the authors fixed representative assistant intents and executed them as deterministic MCP tool workflows against local mocks. This isolates connection handling, tool schemas, response normalization, and safety behavior from prompt variability \cite{yao2022react}. All measurements were taken on localhost against mock endpoints; latencies therefore reflect adapter overhead, not network round-trip times.
 
 \begin{table}[t]
-    \caption{Benchmark matrix for the two-layer evaluation.}
+    \caption{Benchmark matrix for the deterministic evaluation.}
     \label{tab:tasks}
     \centering
     \scriptsize
@@ -238,8 +239,6 @@ The normal runs also use fixed value patterns so task validation is deterministi
 
 The harness records raw tool responses and then derives family-level, task-level, and recovery-phase summaries from the same JSON artifacts. The tables in the paper are generated from these JSON results through a single-source-of-truth pipeline (\texttt{generate\_paper\_tables.py}), eliminating hand-copied numbers.
 
-The harness also measures baseline latency by calling mock servers directly (bypassing the MCP adapter) 30 times each, enabling computation of adapter overhead as the difference between adapter median and baseline median.
-
 \smallskip
 \noindent\textbf{Workflow example (X1).} An operator asks for a fast cross-system snapshot before escalating a maintenance event. The assistant issues three fixed tool calls: a Modbus sensor-block read, an OPC UA multi-node read, and an MQTT broker inspection. The resulting state bundle confirms that the transport links are healthy and that the key process values can be read through all three adapters in one short sequence. X1p exercises the same workflow with parallel tool calls via \texttt{asyncio.gather()}.
 \smallskip
@@ -281,7 +280,7 @@ Table \ref{tab:taskbreakdown} makes the tail behavior clearer. Modbus remains ti
 
 Figure \ref{fig:latencyboxplot} shows the per-task latency distributions. The visualization reveals that most tasks have tight distributions with few outliers, except OPC UA variable enumeration (O4), which shows inherently higher variance due to the recursive tree traversal.
 
-\textbf{Adapter overhead.} Baseline measurements (direct TCP/socket calls to mock servers, bypassing the MCP adapter stack) were collected for comparison. The adapter overhead---the difference between the MCP-mediated median latency and the direct-call baseline median---quantifies the cost of the MCP adapter layer. This overhead is dominated by the stdio transport and JSON serialization rather than protocol translation, and remains well below application-level latency requirements for supervisory operations.
+\textbf{Overhead decomposition.} The adapter overhead is dominated by three components: (1) stdio transport---each tool call requires process-level IPC through stdin/stdout pipes; (2) JSON serialization---request encoding and response parsing of the envelope structure; (3) protocol translation---the actual client library call. For local mock targets, the protocol call itself is sub-millisecond, making the stdio+JSON path the dominant cost. This decomposition suggests that switching to an HTTP or SSE transport would reduce overhead for production deployments.
 
 \subsection{Fault Injection Results}
 \label{sec:results:fault}
@@ -346,24 +345,6 @@ The recovery experiments use dual-mode reporting over \totalRecoveryTrials{} tri
 
 Figure \ref{fig:recoverybreakdown} shows the phase-level breakdown. MQTT detects outages almost immediately. Modbus detects within its retry window. OPC UA spends the most time in the failure-detection phase due to its connection-oriented transport. Future hardening work should tune timeout and reconnect policy per protocol rather than enforce one global default.
 
-\subsection{Quantitative LLM Assessment}
-\label{sec:results:llm}
-
-The deterministic benchmark confirms adapter correctness, but the paper's motivation is AI-assisted industrial operations. To close this loop, we conducted a quantitative LLM assessment that evaluates whether AI assistants can effectively use the tool schemas produced by the adapters.
-
-\textbf{Methodology.} The assessment feeds the complete MCP tool schemas (all \modbusToolCount{} Modbus, \mqttToolCount{} MQTT, and \opcuaToolCount{} OPC UA tools) to the Claude API and evaluates structured tool-use responses against ground truth. The prompt corpus contains 45 prompts across four categories:
-
-\begin{itemize}
-    \item \emph{Discovery} (5 prompts): ``List available tools'', ``Which tools can write?'', etc. Metric: tool discovery recall (\%).
-    \item \emph{Tool selection} (15 prompts): 5 per protocol, covering reads/writes/diagnostics. Metric: tool selection accuracy (\%).
-    \item \emph{Parameter correctness} (15 prompts): 5 per protocol, checking argument construction. Metric: per-field accuracy (\%).
-    \item \emph{Error interpretation} (10 prompts): given real fault-injection error envelopes. Metric: error class identification accuracy (\%).
-\end{itemize}
-
-\textbf{Models.} Two size points from the same model family were evaluated: Claude Sonnet 4 and Claude Haiku 4. Multi-family evaluation (e.g., GPT, Gemini) is noted as future work.
-
-\textbf{Scope and limitations.} The evaluation uses a single LLM family and schema-only tool definitions (no live MCP integration during the assessment). The 45-prompt corpus, while covering four distinct capability dimensions, does not approach the scale of tool-use benchmarks like ToolLLM~\cite{qin2024toolllm}. Multi-family comparison and live integration testing are clear next steps.
-
 \subsection{Security Considerations}
 \label{sec:results:security}
 
@@ -382,11 +363,9 @@ The current adapter architecture provides functional write guards via environmen
 
 The evidence is intentionally bounded. This is a mock-only, localhost-only study. All latencies reflect local process overhead, not network round-trip. The benchmark omits human baselines and excludes OPC UA method calls because the current prototype mock does not yet support them reliably enough for repeatable measurement.
 
-The LLM assessment uses a single model family (Claude) and evaluates schema-only tool use. Multi-family comparison and live MCP integration testing are clear next steps.
+Validating assistant-level usability through a quantitative LLM assessment across multiple model families is a clear next step.
 
 The stress suite identifies concurrency boundaries but does not systematically explore all possible failure modes under load. The mid-operation restart scenario (S10--S12) depends on timing and may produce variable results across runs.
-
-The adapter overhead measurement uses raw TCP socket operations as a baseline, which underestimates the true protocol-level baseline (a proper Modbus client, MQTT client, or OPC UA client stack would add overhead of its own). The reported overhead should be understood as adapter-plus-MCP-transport cost relative to raw socket cost.
 
 \section{Related Work}
 \label{sec:related}
@@ -399,16 +378,16 @@ Industrial middleware, cyber-physical manufacturing systems, and digital-twin wo
 
 Software fault injection has a long history in dependability assessment. Natella et al.~\cite{natella2016faultinjection} survey the field comprehensively, establishing that injecting faults at the API or protocol boundary is an effective way to assess error-handling quality without requiring hardware failures. The fault-injection suite in this paper follows that tradition: it sends deliberately malformed inputs through the MCP tool interface and judges whether the adapter returns structured, interpretable errors.
 
-Recent LLM-agent research has moved from reasoning-action loops toward explicit tool learning over large API surfaces \cite{yao2022react,schick2023toolformer,patil2023gorilla,qiao2024executionfeedback}. Benchmarks such as ToolLLM~\cite{qin2024toolllm} and API-Bank~\cite{li2023apibank} evaluate LLM tool selection and invocation at scale, providing methodological precedent for the LLM assessment in this paper. MCP contributes a practical schema for tool discovery and invocation \cite{anthropic2024mcp}, but it does not prescribe how industrial protocols should be translated, guarded, or benchmarked. The contribution is therefore not a new tool-use framework. It is an MCP-to-OT adapter pattern with shared safety conventions and a two-layer evaluation model for a narrowly defined industrial setting.
+Recent LLM-agent research has moved from reasoning-action loops toward explicit tool learning over large API surfaces \cite{yao2022react,schick2023toolformer,patil2023gorilla,qiao2024executionfeedback}. MCP contributes a practical schema for tool discovery and invocation \cite{anthropic2024mcp}, but it does not prescribe how industrial protocols should be translated, guarded, or benchmarked. The contribution is therefore not a new tool-use framework. It is an MCP-to-OT adapter pattern with shared safety conventions and a deterministic evaluation model for a narrowly defined industrial setting.
 
 This comparison clarifies the contribution boundary. A full digital-twin paper would claim model fidelity or synchronization strategy; a generic agent paper would emphasize tool selection at scale; an industrial middleware paper would prioritize interoperability between production systems. \system\ instead focuses on a smaller but necessary substrate: deterministic, assistant-facing protocol adapters whose behavior can be measured before any real deployment study begins.
 
 \section{Conclusion}
 \label{sec:conclusion}
 
-\system\ is best understood as a prototype MCP-to-OT adapter architecture evaluated through a two-layer model. The deterministic benchmark layer exercises \totalRuns{} runs and \totalToolCalls{} tool calls across normal, fault-injection, stress, and recovery suites, showing that the Modbus, MQTT/Sparkplug B, and OPC UA adapters handle normal operations, deliberate faults, concurrency stress, and endpoint restarts with consistent response semantics and structured error handling. The quantitative LLM assessment measures tool discovery, selection, parameter correctness, and error interpretation across two model sizes, confirming that the tool surface is designed for and usable by AI assistants. Same-session recovery after endpoint restart is demonstrated for all three protocols. The broader repository provides ten protocol modules, but only three are evaluated in this paper.
+The deterministic benchmark exercises \totalRuns{} runs and \totalToolCalls{} tool calls across normal, fault-injection, stress, and recovery suites, showing that the Modbus, MQTT/Sparkplug B, and OPC UA adapters handle normal operations, deliberate faults, concurrency stress, and endpoint restarts with consistent response semantics and structured error handling. Same-session recovery after endpoint restart is demonstrated for all three protocols. The broader repository provides ten protocol modules, but only three are evaluated in this paper.
 
-The next steps are: validate the same workflows on real hardware, add RBAC and audit logging around write-capable tools, extend the LLM assessment to multiple model families with live MCP integration, and expand the evaluation beyond mock connectivity into operator-in-the-loop scenarios with quantitative usability metrics.
+The next steps are: validate the same workflows on real hardware, add RBAC and audit logging around write-capable tools, conduct a quantitative LLM assessment across multiple model families with live MCP integration, and expand the evaluation beyond mock connectivity into operator-in-the-loop scenarios with quantitative usability metrics.
 
 \bibliographystyle{IEEEtran}
 \bibliography{references}

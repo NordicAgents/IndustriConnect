@@ -57,23 +57,6 @@ R.~Natella, D.~Cotroneo, and H.~S. Madeira, ``Assessing dependability with
   software fault injection: A survey,'' \emph{ACM Computing Surveys}, vol.~48,
   no.~3, pp. 1--55, 2016.
 
-\bibitem{qin2024toolllm}
-\BIBentryALTinterwordspacing
-Y.~Qin, S.~Liang, Y.~Ye, K.~Zhu, L.~Yan, Y.~Lu, Y.~Lin, X.~Cong, X.~Tang,
-  B.~Qian, S.~Zhao, L.~Hong, R.~Tian, R.~Xie, J.~Zhou, M.~Gerber, D.~Li,
-  Z.~Liu, and M.~Sun, ``{ToolLLM}: Facilitating large language models to master
-  16000+ real-world {APIs},'' \emph{arXiv preprint arXiv:2307.16789}, 2024.
-  [Online]. Available: \url{https://arxiv.org/abs/2307.16789}
-\BIBentrySTDinterwordspacing
-
-\bibitem{li2023apibank}
-\BIBentryALTinterwordspacing
-M.~Li, Y.~Zhao, B.~Yu, F.~Song, H.~Li, H.~Yu, Z.~Li, F.~Huang, and Y.~Li,
-  ``{API-Bank}: A comprehensive benchmark for tool-augmented {LLMs},''
-  \emph{arXiv preprint arXiv:2304.08244}, 2023. [Online]. Available:
-  \url{https://arxiv.org/abs/2304.08244}
-\BIBentrySTDinterwordspacing
-
 \bibitem{lasi2014industry40}
 H.~Lasi, P.~Fettke, H.-G. Kemper, T.~Feld, and M.~Hoffmann, ``Industry 4.0,''
   \emph{Business \& Information Systems Engineering}, vol.~6, no.~4, pp.

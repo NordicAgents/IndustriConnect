@@ -2,12 +2,12 @@
         \toprule
         ID & Family & Fault scenario & EH\% & Med. (ms) & Error class \\
         \midrule
-        FM1 & Modbus & Read invalid register address (9999) and expect a structured protocol error. & 100.0 & 1.4 & protocol error \\
-        FM2 & Modbus & Write overflow value (70000 > uint16 max) and observe adapter or mock behavior. & 100.0 & 1.3 & other \\
-        FQ1 & MQTT & Publish to empty topic string and expect a structured invalid-input error. & 100.0 & 1.8 & invalid input \\
-        FQ2 & MQTT & Subscribe with invalid QoS (5) and expect a structured invalid-input error. & 100.0 & 1.7 & invalid input \\
-        FO1 & OPC UA & Read non-existent node (ns=2;i=99999) and expect a structured read-failed error. & 100.0 & 2.1 & illegal address \\
-        FO2 & OPC UA & Write wrong type (string to float node) and expect a structured write-failed error. & 100.0 & 1.9 & protocol error \\
-        FX1 & Cross-protocol & 3-step cross-protocol sequence with one deliberate bad OPC UA read; expect 2/3 succeed. & 100.0 & 5.6 & illegal address \\
+        FM1 & Modbus & Read invalid register address (9999) and expect a structured protocol error. & 100.0 & 1.3 & protocol error \\
+        FM2 & Modbus & Write overflow value (70000 > uint16 max) and expect adapter rejection. & 100.0 & 1.0 & range overflow \\
+        FQ1 & MQTT & Publish to empty topic string and expect a structured invalid-input error. & 100.0 & 1.6 & invalid input \\
+        FQ2 & MQTT & Subscribe with invalid QoS (5) and expect a structured invalid-input error. & 100.0 & 1.6 & invalid input \\
+        FO1 & OPC UA & Read non-existent node (ns=2;i=99999) and expect a structured read-failed error. & 100.0 & 2.7 & illegal address \\
+        FO2 & OPC UA & Write wrong type (string to float node) and expect a structured write-failed error. & 100.0 & 2.5 & protocol error \\
+        FX1 & Cross-protocol & 3-step cross-protocol sequence with one deliberate bad OPC UA read; expect 2/3 succeed. & 100.0 & 5.7 & illegal address \\
         \bottomrule
     \end{tabularx}

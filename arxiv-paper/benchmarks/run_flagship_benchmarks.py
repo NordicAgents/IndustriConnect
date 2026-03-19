@@ -1115,83 +1115,6 @@ async def _recovery_success_call(
         return await call_tool_json(session, tool, arguments)
 
 
-async def run_baseline_measurements(
-    modbus_mock: ManagedProcess,
-    broker: ManagedProcess,
-    opcua_server: ManagedProcess,
-) -> Dict[str, Any]:
-    """Measure baseline latency by calling mock servers directly (bypassing MCP adapter).
-
-    This provides adapter_overhead = adapter_median - baseline_median.
-    """
-    import socket
-
-    baselines: Dict[str, List[float]] = {"Modbus": [], "MQTT": [], "OPC UA": []}
-
-    # Modbus baseline: raw TCP read holding register
-    for _ in range(30):
-        start = time.perf_counter()
-        try:
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.settimeout(2.0)
-            s.connect(("127.0.0.1", 1502))
-            # Modbus TCP: read holding register 0, count 1
-            request = bytes([
-                0x00, 0x01,  # transaction ID
-                0x00, 0x00,  # protocol ID
-                0x00, 0x06,  # length
-                0x01,        # unit ID
-                0x03,        # function code: read holding registers
-                0x00, 0x00,  # start address
-                0x00, 0x01,  # quantity
-            ])
-            s.sendall(request)
-            s.recv(256)
-            s.close()
-            baselines["Modbus"].append((time.perf_counter() - start) * 1000.0)
-        except Exception:
-            baselines["Modbus"].append(float("nan"))
-
-    # MQTT baseline: raw TCP connect to broker
-    for _ in range(30):
-        start = time.perf_counter()
-        try:
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.settimeout(2.0)
-            s.connect(("127.0.0.1", 1883))
-            s.close()
-            baselines["MQTT"].append((time.perf_counter() - start) * 1000.0)
-        except Exception:
-            baselines["MQTT"].append(float("nan"))
-
-    # OPC UA baseline: raw TCP connect
-    for _ in range(30):
-        start = time.perf_counter()
-        try:
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.settimeout(2.0)
-            s.connect(("127.0.0.1", 4840))
-            s.close()
-            baselines["OPC UA"].append((time.perf_counter() - start) * 1000.0)
-        except Exception:
-            baselines["OPC UA"].append(float("nan"))
-
-    result = {}
-    for family, values in baselines.items():
-        clean = [v for v in values if not math.isnan(v)]
-        if clean:
-            result[family] = {
-                "median_ms": round(statistics.median(clean), 3),
-                "mean_ms": round(statistics.mean(clean), 3),
-                "std_ms": round(statistics.stdev(clean), 3) if len(clean) > 1 else 0.0,
-                "samples": len(clean),
-            }
-        else:
-            result[family] = {"median_ms": 0.0, "mean_ms": 0.0, "std_ms": 0.0, "samples": 0}
-
-    return result
-
-
 def aggregate_normal_results(results: List[Dict[str, Any]]) -> Dict[str, Any]:
     by_family: Dict[str, List[Dict[str, Any]]] = {}
     by_task: Dict[str, List[Dict[str, Any]]] = {}
@@ -1431,9 +1354,6 @@ async def main() -> None:
         await opcua_server.start()
         await asyncio.sleep(1.0)
 
-        # Baseline measurements (2G)
-        baseline_measurements = await run_baseline_measurements(modbus_mock, broker, opcua_server)
-
         async with mcp_session(
             "uv",
             ["run", "modbus-mcp"],
@@ -1512,7 +1432,6 @@ async def main() -> None:
             "stress_summary": stress_summary,
             "recovery_trials": recovery_results,
             "recovery_summary": recovery_summary,
-            "baseline_measurements": baseline_measurements,
             "exact_tool_call_counts": exact_tool_call_counts,
             "protocol_inventory": protocol_inventory,
             "artifacts": {

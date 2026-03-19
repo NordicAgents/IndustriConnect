@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.27 (TeX Live 2025) (preloaded format=pdflatex 2025.7.19)  19 MAR 2026 07:41
+This is pdfTeX, Version 3.141592653-2.6-1.40.27 (TeX Live 2025) (preloaded format=pdflatex 2025.7.19)  19 MAR 2026 08:22
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -241,16 +241,6 @@ Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 4
 File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Liv
 e
 ))
-Underfull \hbox (badness 1484) in paragraph at lines 54--56
-\OT1/ptm/b/n/9 but they do not na-tively speak in-dus-trial pro-to-cols such
- []
-
-
-
-
-Underfull \hbox (badness 5175) in paragraph at lines 73--74
-[]\OT1/ptm/m/n/10 A re-pro-ducible two-layer eval-u-a-tion on Mod-bus,
- []
 
 
 
@@ -262,39 +252,55 @@ ocal/texlive/2025/texmf-dist/fonts/enc/dvips/base/8r.enc}
 <figures/fig1_architecture.png, id=9, 642.4pt x 642.4pt>
 File: figures/fig1_architecture.png Graphic file (type png)
 <use figures/fig1_architecture.png>
-Package pdftex.def Info: figures/fig1_architecture.png  used on input line 92.
+Package pdftex.def Info: figures/fig1_architecture.png  used on input line 91.
 (pdftex.def)             Requested size: 226.79846pt x 226.794pt.
 LaTeX Font Info:    Trying to load font information for OT1+pcr on input line 9
-8.
+7.
 
 (/usr/local/texlive/2025/texmf-dist/tex/latex/psnfss/ot1pcr.fd
 File: ot1pcr.fd 2001/06/04 font definitions for OT1/pcr.
 )
 LaTeX Font Info:    Trying to load font information for OMS+pcr on input line 9
-8.
+7.
 
 (/usr/local/texlive/2025/texmf-dist/tex/latex/psnfss/omspcr.fd
 File: omspcr.fd 
 )
 LaTeX Font Info:    Font shape `OMS/pcr/m/n' in size <10> not available
-(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 98.
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 97.
 
 
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <8> on input line 129.
+(Font)              <8> on input line 128.
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <6> on input line 129.
+(Font)              <6> on input line 128.
 
-Underfull \hbox (badness 10000) in alignment at lines 150--150
+Underfull \hbox (badness 10000) in alignment at lines 149--149
 [][][][][] 
  []
 
 
 
 [2 <./figures/fig1_architecture.png (PNG copy)>]
+Underfull \hbox (badness 3260) in paragraph at lines 165--166
+[]\OT1/ptm/b/n/10 Mock end-point fi-delity. \OT1/ptm/m/n/10 Each flag-ship mock
+ sim-u-
+ []
 
 
-Underfull \hbox (badness 3019) in paragraph at lines 166--167
+Underfull \hbox (badness 1715) in paragraph at lines 165--166
+\OT1/ptm/m/n/10 lates enough plant-floor state for the bench-mark work-
+ []
+
+
+Underfull \hbox (badness 1533) in paragraph at lines 165--166
+\OT1/ptm/m/n/10 (valve[]position, heater[]power, fan[]speed, con-veyor[]speed,
+ []
+
+
+
+
+Underfull \hbox (badness 3019) in paragraph at lines 167--168
 []\OT1/ptm/b/n/10 Supporting con-sole. \OT1/ptm/m/n/10 The repos-i-tory also in
 -cludes a
  []
@@ -302,68 +308,59 @@ Underfull \hbox (badness 3019) in paragraph at lines 166--167
 <figures/fig3_protocol_map.png, id=15, 432.1746pt x 445.1832pt>
 File: figures/fig3_protocol_map.png Graphic file (type png)
 <use figures/fig3_protocol_map.png>
-Package pdftex.def Info: figures/fig3_protocol_map.png  used on input line 170.
+Package pdftex.def Info: figures/fig3_protocol_map.png  used on input line 171.
 
 (pdftex.def)             Requested size: 231.83954pt x 238.81259pt.
 <figures/fig5_mcp_manager_ui.png, id=17, 734.9859pt x 460.3599pt>
 File: figures/fig5_mcp_manager_ui.png Graphic file (type png)
 <use figures/fig5_mcp_manager_ui.png>
 Package pdftex.def Info: figures/fig5_mcp_manager_ui.png  used on input line 17
-7.
+8.
 (pdftex.def)             Requested size: 231.83954pt x 145.21082pt.
 
 
-[3 <./figures/fig3_protocol_map.png> <./figures/fig5_mcp_manager_ui.png>]
-Underfull \hbox (badness 1675) in paragraph at lines 235--236
+[3 <./figures/fig3_protocol_map.png>]
+
+
+Underfull \hbox (badness 1675) in paragraph at lines 236--237
 \OT1/ptm/m/n/10 at \OT1/pcr/m/n/10 127.0.0.1:1502\OT1/ptm/m/n/10 , the MQTT ada
 pter tar-geted the
  []
 
 
-Underfull \hbox (badness 4492) in paragraph at lines 235--236
+Underfull \hbox (badness 4492) in paragraph at lines 236--237
 \OT1/ptm/m/n/10 lo-cal bro-ker at \OT1/pcr/m/n/10 mqtt://127.0.0.1:1883\OT1/ptm
 /m/n/10 , and the
  []
 
 
-Underfull \hbox (badness 2065) in paragraph at lines 235--236
+Underfull \hbox (badness 2065) in paragraph at lines 236--237
 \OT1/ptm/m/n/10 OPC UA adapter tar-geted the lo-cal mock end-point at
  []
 
 
-
-
-Underfull \hbox (badness 4168) in paragraph at lines 237--238
+Underfull \hbox (badness 4168) in paragraph at lines 238--239
 []\OT1/ptm/m/n/10 The nor-mal runs also use fixed value pat-terns so
  []
 
 (./generated/tables/tab_results.tex)
-Underfull \hbox (badness 2635) in paragraph at lines 262--263
-\OT1/ptm/m/n/10 suite: all 140 task ex-e-cu-tions suc-ceeded, and all 200
+Underfull \hbox (badness 2635) in paragraph at lines 261--262
+\OT1/ptm/m/n/10 suite: all 480 task ex-e-cu-tions suc-ceeded, and all 780
  []
 
 
 
-[4] (./generated/tables/tab_taskbreakdown.tex)
-<figures/fig7_latency_boxplot.png, id=27, 730.9125pt x 297.2925pt>
+[4 <./figures/fig5_mcp_manager_ui.png>]
+(./generated/tables/tab_taskbreakdown.tex)
+<figures/fig7_latency_boxplot.png, id=27, 722.7pt x 289.08pt>
 File: figures/fig7_latency_boxplot.png Graphic file (type png)
 <use figures/fig7_latency_boxplot.png>
 Package pdftex.def Info: figures/fig7_latency_boxplot.png  used on input line 2
-77.
-(pdftex.def)             Requested size: 252.0pt x 102.49797pt.
-
-Underfull \hbox (badness 10000) in paragraph at lines 284--285
-[]\OT1/ptm/b/n/10 Adapter over-head. \OT1/ptm/m/n/10 Base-line mea-sure-ments (
-di-rect
- []
-
-
-Underfull \hbox (badness 2012) in paragraph at lines 284--285
-\OT1/ptm/m/n/10 TCP/socket calls to mock servers, by-pass-ing the MCP
- []
+76.
+(pdftex.def)             Requested size: 252.0pt x 100.80016pt.
 
 (./generated/tables/tab_faultresults.tex)
-Underfull \vbox (badness 10000) has occurred while \output is active []
+Underfull \vbox (badness 5726) has occurred while \output is active []
 
 
 
@@ -371,62 +368,48 @@ Underfull \vbox (badness 10000) has occurred while \output is active []
 File: figures/fig6_error_distribution.png Graphic file (type png)
 <use figures/fig6_error_distribution.png>
 Package pdftex.def Info: figures/fig6_error_distribution.png  used on input lin
-e 304.
+e 303.
 (pdftex.def)             Requested size: 252.0pt x 120.5225pt.
 
 
 [5 <./figures/fig7_latency_boxplot.png> <./figures/fig6_error_distribution.png>
 ]
-<generated/flagship_recovery.png, id=34, 361.35pt x 202.356pt>
+<generated/flagship_recovery.png, id=34, 433.62pt x 231.264pt>
 File: generated/flagship_recovery.png Graphic file (type png)
 <use generated/flagship_recovery.png>
 Package pdftex.def Info: generated/flagship_recovery.png  used on input line 32
-7.
-(pdftex.def)             Requested size: 252.0pt x 141.12022pt.
+6.
+(pdftex.def)             Requested size: 252.0pt x 134.4014pt.
 
 
 <figures/fig4_recovery_breakdown.png, id=35, 498.663pt x 216.81pt>
 File: figures/fig4_recovery_breakdown.png Graphic file (type png)
 <use figures/fig4_recovery_breakdown.png>
 Package pdftex.def Info: figures/fig4_recovery_breakdown.png  used on input lin
-e 342.
+e 341.
 (pdftex.def)             Requested size: 252.0pt x 109.56592pt.
 
 
 [6 <./generated/flagship_recovery.png> <./figures/fig4_recovery_breakdown.png>]
 
-Underfull \hbox (badness 1622) in paragraph at lines 360--361
-[]\OT1/ptm/m/it/10 Error in-ter-pre-ta-tion \OT1/ptm/m/n/10 (10 prompts): given
- real fault-
- []
-
-
-Underfull \hbox (badness 5862) in paragraph at lines 370--371
+Underfull \hbox (badness 5862) in paragraph at lines 351--352
 []\OT1/ptm/m/n/10 The cur-rent adapter ar-chi-tec-ture pro-vides func-tional
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 370--371
+Underfull \hbox (badness 10000) in paragraph at lines 351--352
 \OT1/ptm/m/n/10 write guards via environment-variable booleans (e.g.,
  []
 
 
 
+(./main.bbl
 
-Underfull \hbox (badness 1448) in paragraph at lines 389--390
-\OT1/ptm/m/n/10 op-er-a-tions as a base-line, which un-der-es-ti-mates the true
-
- []
-
-
-
-[7] (./main.bbl
+[7]
 Underfull \hbox (badness 10000) in paragraph at lines 36--38
 []\OT1/ptm/m/n/8 Anthropic, ``Model con-text pro-to-col spec-i-fi-ca-tion,'' $h
 ttps :
  []
-
-
 
 )
 
@@ -442,31 +425,34 @@ Before submitting the final camera ready copy, remember to:
 
 
 
-[8] (./main.aux)
+
+
+[8
+
+] (./main.aux)
  ***********
 LaTeX2e <2024-11-01> patch level 2
 L3 programming layer <2025-01-18>
  ***********
  ) 
 Here is how much of TeX's memory you used:
- 2815 strings out of 473190
- 50893 string characters out of 5715800
- 461970 words of memory out of 5000000
- 26043 multiletter control sequences out of 15000+600000
+ 2810 strings out of 473190
+ 50787 string characters out of 5715800
+ 462665 words of memory out of 5000000
+ 26038 multiletter control sequences out of 15000+600000
  599453 words of font info for 103 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 57i,10n,65p,1651b,307s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 57i,10n,65p,1355b,307s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb
-></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb><
-/usr/local/texlive/2025/texmf-dist/fonts/type1/urw/courier/ucrr8a.pfb></usr/loc
-al/texlive/2025/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></usr/local/texlive
-/2025/texmf-dist/fonts/type1/urw/times/utmbi8a.pfb></usr/local/texlive/2025/tex
-mf-dist/fonts/type1/urw/times/utmr8a.pfb></usr/local/texlive/2025/texmf-dist/fo
-nts/type1/urw/times/utmri8a.pfb>
-Output written on main.pdf (8 pages, 933456 bytes).
+></usr/local/texlive/2025/texmf-dist/fonts/type1/urw/courier/ucrr8a.pfb></usr/l
+ocal/texlive/2025/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></usr/local/texli
+ve/2025/texmf-dist/fonts/type1/urw/times/utmbi8a.pfb></usr/local/texlive/2025/t
+exmf-dist/fonts/type1/urw/times/utmr8a.pfb></usr/local/texlive/2025/texmf-dist/
+fonts/type1/urw/times/utmri8a.pfb>
+Output written on main.pdf (8 pages, 937628 bytes).
 PDF statistics:
- 81 PDF objects out of 1000 (max. 8388607)
- 43 compressed objects within 1 object stream
+ 76 PDF objects out of 1000 (max. 8388607)
+ 40 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
  36 words of extra memory for PDF output out of 10000 (max. 10000000)
 

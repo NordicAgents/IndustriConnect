@@ -284,107 +284,6 @@ def generate_tab_stats(data: Dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def generate_tab_baseline(data: Dict[str, Any]) -> str | None:
-    """Adapter overhead / baseline measurements.  Returns None if absent."""
-    baseline = _safe_get(data, "baseline_measurements")
-    if not baseline:
-        return None
-
-    lines: List[str] = []
-
-    if isinstance(baseline, dict):
-        # Expect something like {family: {raw_latency_ms, adapter_latency_ms, overhead_ms, overhead_pct}}
-        for family in FAMILY_ORDER:
-            b = baseline.get(family)
-            if b is None:
-                continue
-            raw = _ms(b.get("raw_latency_ms", 0))
-            adapter = _ms(b.get("adapter_latency_ms", 0))
-            overhead = _ms(b.get("overhead_ms", 0))
-            pct = f"{b.get('overhead_pct', 0):.1f}"
-            lines.append(
-                f"{family} & {raw} & {adapter} & {overhead} & {pct}\\% \\\\"
-            )
-    elif isinstance(baseline, list):
-        for entry in baseline:
-            family = entry.get("family", entry.get("protocol", "---"))
-            raw = _ms(entry.get("raw_latency_ms", 0))
-            adapter = _ms(entry.get("adapter_latency_ms", 0))
-            overhead = _ms(entry.get("overhead_ms", 0))
-            pct = f"{entry.get('overhead_pct', 0):.1f}"
-            lines.append(
-                f"{family} & {raw} & {adapter} & {overhead} & {pct}\\% \\\\"
-            )
-
-    if not lines:
-        return None
-
-    return "\n".join(lines) + "\n"
-
-
-def generate_tab_llm_assessment(llm_data: Dict[str, Any] | None) -> str | None:
-    """LLM assessment results table body.  Returns None if no data.
-
-    Expected input format (from run_llm_assessment.py):
-    {
-      "models": {
-        "claude-sonnet-4-20250514": {
-          "discovery": {"recall": 0.95, ...},
-          "tool_selection": {"accuracy": 0.93, ...},
-          "parameter_correctness": {"accuracy": 0.87, "per_field_accuracy": 0.91, ...},
-          "error_interpretation": {"accuracy": 0.90, ...}
-        },
-        ...
-      }
-    }
-
-    Output: rows for a table with columns: Model | Discovery | Selection | Param. | Error Interp.
-    """
-    if not llm_data:
-        return None
-
-    models = llm_data.get("models", {})
-    if not models:
-        return None
-
-    categories = ["discovery", "tool_selection", "parameter_correctness", "error_interpretation"]
-    metric_keys = ["recall", "accuracy", "accuracy", "accuracy"]
-
-    rows: List[str] = []
-    for model_id, model_data in models.items():
-        if not isinstance(model_data, dict):
-            continue
-        # Shorten model name for display
-        short_name = model_id.replace("claude-", "").replace("-20250514", "").replace("-20251001", "")
-        short_name = _escape_latex(short_name)
-
-        values = []
-        for cat, metric_key in zip(categories, metric_keys):
-            cat_data = model_data.get(cat, {})
-            val = cat_data.get(metric_key, cat_data.get("accuracy", 0.0))
-            if isinstance(val, (int, float)):
-                values.append(f"{val * 100:.1f}")
-            else:
-                values.append("---")
-
-        rows.append(f"        {short_name} & {' & '.join(values)} \\\\")
-
-    if not rows:
-        return None
-
-    lines = [
-        r"    \begin{tabular}{@{}lcccc@{}}",
-        r"        \toprule",
-        r"        Model & Discovery & Selection & Param. & Error \\",
-        r"        & recall (\%) & acc. (\%) & acc. (\%) & acc. (\%) \\",
-        r"        \midrule",
-    ]
-    lines.extend(rows)
-    lines.append(r"        \bottomrule")
-    lines.append(r"    \end{tabular}")
-    return "\n".join(lines) + "\n"
-
-
 def generate_exact_counts(data: Dict[str, Any]) -> str:
     r"""Generate \newcommand definitions for exact run/call counts."""
     normal_tasks: List[Dict[str, Any]] = data.get("normal_tasks", [])
@@ -457,8 +356,6 @@ def main() -> None:
     if data is None:
         raise SystemExit("ERROR: flagship_benchmark_results.json not found in generated/")
 
-    llm_data = _load_json(GENERATED / "llm_assessment_results.json")
-
     # 1. Family-level normal results
     (TABLES / "tab_results.tex").write_text(
         generate_tab_results(data), encoding="utf-8"
@@ -491,23 +388,7 @@ def main() -> None:
     )
     print("  wrote tab_stats.tex")
 
-    # 6. Baseline / adapter overhead (optional)
-    baseline = generate_tab_baseline(data)
-    if baseline is not None:
-        (TABLES / "tab_baseline.tex").write_text(baseline, encoding="utf-8")
-        print("  wrote tab_baseline.tex")
-    else:
-        print("  skipped tab_baseline.tex (no baseline data)")
-
-    # 7. LLM assessment (optional)
-    llm = generate_tab_llm_assessment(llm_data)
-    if llm is not None:
-        (TABLES / "tab_llm_assessment.tex").write_text(llm, encoding="utf-8")
-        print("  wrote tab_llm_assessment.tex")
-    else:
-        print("  skipped tab_llm_assessment.tex (no LLM assessment data)")
-
-    # 8. Exact counts as LaTeX newcommands
+    # 6. Exact counts as LaTeX newcommands
     (TABLES / "exact_counts.tex").write_text(
         generate_exact_counts(data), encoding="utf-8"
     )
