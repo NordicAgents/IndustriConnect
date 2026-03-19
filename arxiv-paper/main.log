@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.27 (TeX Live 2025) (preloaded format=pdflatex 2025.7.19)  12 MAR 2026 16:04
+This is pdfTeX, Version 3.141592653-2.6-1.40.27 (TeX Live 2025) (preloaded format=pdflatex 2025.7.19)  19 MAR 2026 07:14
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -292,18 +292,18 @@ Underfull \hbox (badness 3019) in paragraph at lines 148--149
 -cludes a
  []
 
-<figures/fig3_protocol_map.png, id=15, 642.4pt x 642.4pt>
+<figures/fig3_protocol_map.png, id=15, 432.1746pt x 445.1832pt>
 File: figures/fig3_protocol_map.png Graphic file (type png)
 <use figures/fig3_protocol_map.png>
 Package pdftex.def Info: figures/fig3_protocol_map.png  used on input line 152.
 
-(pdftex.def)             Requested size: 231.83954pt x 231.84215pt.
-<figures/fig5_mcp_manager_ui.png, id=16, 642.4pt x 642.4pt>
+(pdftex.def)             Requested size: 231.83954pt x 238.81259pt.
+<figures/fig5_mcp_manager_ui.png, id=17, 734.9859pt x 460.3599pt>
 File: figures/fig5_mcp_manager_ui.png Graphic file (type png)
 <use figures/fig5_mcp_manager_ui.png>
 Package pdftex.def Info: figures/fig5_mcp_manager_ui.png  used on input line 15
 9.
-(pdftex.def)             Requested size: 231.83954pt x 231.84215pt.
+(pdftex.def)             Requested size: 231.83954pt x 145.21082pt.
 
 Underfull \vbox (badness 1097) has occurred while \output is active []
 
@@ -311,8 +311,7 @@ Underfull \vbox (badness 1097) has occurred while \output is active []
 
 
 
-[3 <./figures/fig3_protocol_map.png (PNG copy)> <./figures/fig5_mcp_manager_ui.
-png (PNG copy)>]
+[3 <./figures/fig3_protocol_map.png> <./figures/fig5_mcp_manager_ui.png>]
 Underfull \hbox (badness 1675) in paragraph at lines 211--212
 \OT1/ptm/m/n/10 at \OT1/pcr/m/n/10 127.0.0.1:1502\OT1/ptm/m/n/10 , the MQTT ada
 pter tar-geted the
@@ -339,20 +338,20 @@ Underfull \hbox (badness 4168) in paragraph at lines 213--214
 
 
 [4]
-<figures/fig6_error_distribution.png, id=24, 498.663pt x 238.491pt>
+<figures/fig6_error_distribution.png, id=27, 498.663pt x 238.491pt>
 File: figures/fig6_error_distribution.png Graphic file (type png)
 <use figures/fig6_error_distribution.png>
 Package pdftex.def Info: figures/fig6_error_distribution.png  used on input lin
 e 315.
 (pdftex.def)             Requested size: 252.0pt x 120.5225pt.
-<figures/fig4_recovery_breakdown.png, id=26, 498.663pt x 216.81pt>
+
+
+<figures/fig4_recovery_breakdown.png, id=28, 498.663pt x 216.81pt>
 File: figures/fig4_recovery_breakdown.png Graphic file (type png)
 <use figures/fig4_recovery_breakdown.png>
 Package pdftex.def Info: figures/fig4_recovery_breakdown.png  used on input lin
 e 327.
 (pdftex.def)             Requested size: 252.0pt x 109.56592pt.
-
-
 
 
 [5 <./figures/fig6_error_distribution.png> <./figures/fig4_recovery_breakdown.p
@@ -396,7 +395,7 @@ L3 programming layer <2025-01-18>
 Here is how much of TeX's memory you used:
  2750 strings out of 473190
  48876 string characters out of 5715800
- 462421 words of memory out of 5000000
+ 464952 words of memory out of 5000000
  25992 multiletter control sequences out of 15000+600000
  597868 words of font info for 101 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
@@ -408,9 +407,9 @@ al/texlive/2025/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></usr/local/texlive
 /2025/texmf-dist/fonts/type1/urw/times/utmbi8a.pfb></usr/local/texlive/2025/tex
 mf-dist/fonts/type1/urw/times/utmr8a.pfb></usr/local/texlive/2025/texmf-dist/fo
 nts/type1/urw/times/utmri8a.pfb>
-Output written on main.pdf (7 pages, 1517590 bytes).
+Output written on main.pdf (7 pages, 838997 bytes).
 PDF statistics:
- 72 PDF objects out of 1000 (max. 8388607)
+ 74 PDF objects out of 1000 (max. 8388607)
  41 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
  26 words of extra memory for PDF output out of 10000 (max. 10000000)
