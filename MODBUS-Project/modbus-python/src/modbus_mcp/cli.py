@@ -331,6 +331,8 @@ async def write_register(address: int, value: int, ctx: Context, slave_id: int =
     """
     if not MODBUS_WRITES_ENABLED:
         return _make_result(False, error="Writes are disabled by configuration", meta={"address": address, "slave_id": slave_id})
+    if not (0 <= value <= 65535):
+        return _make_result(False, error=f"Value {value} out of uint16 range (0-65535)", meta={"address": address, "value": value})
     client = ctx.request_context.lifespan_context.modbus_client
     op = f"write_register addr={address} value={value} slave={slave_id}"
     async def _call():
@@ -519,6 +521,9 @@ async def write_registers(address: int, values: List[int], ctx: Context, slave_i
         return _make_result(False, error="Writes are disabled by configuration", meta={"address": address, "slave_id": slave_id})
     if not values:
         return _make_result(False, error="Values list must not be empty")
+    for i, v in enumerate(values):
+        if not (0 <= v <= 65535):
+            return _make_result(False, error=f"Value {v} at index {i} out of uint16 range (0-65535)", meta={"address": address, "index": i, "value": v})
     client = ctx.request_context.lifespan_context.modbus_client
     op = f"write_registers addr={address} n={len(values)} slave={slave_id}"
     async def _call():
@@ -774,6 +779,10 @@ async def write_tag(
         wordorder = spec.get("wordorder", "big")
         # value could be scalar or list
         vals = value if isinstance(value, list) else [value]
+        if dtype == "uint16":
+            for i, v in enumerate(vals):
+                if not (0 <= int(v) <= 65535):
+                    return _make_result(False, error=f"Value {v} at index {i} out of uint16 range (0-65535)", meta={"tag": name, "index": i, "value": v})
         try:
             regs = _encode_values(vals, dtype, byteorder, wordorder)
         except Exception as e:

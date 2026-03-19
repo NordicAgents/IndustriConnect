@@ -38,6 +38,8 @@ TASK_ORDER = [
     "O4",
     "X1",
     "X2",
+    "X1p",
+    "X2p",
 ]
 
 FAULT_TASK_ORDER = [
@@ -364,7 +366,7 @@ def render_recovery_breakdown_figure(recovery_rows: List[Dict[str, Any]]) -> Non
     bars_restart = ax.bar(labels, restart, bottom=failure, color=colors["restart"], width=0.62, label="restart to healthy response")
 
     ax.set_ylabel("Median recovery time (s)")
-    ax.set_title("Recovery phase breakdown over 10 restart trials per flagship adapter")
+    ax.set_title("Recovery phase breakdown per flagship adapter")
     ax.grid(axis="y", linestyle="--", alpha=0.35)
     ax.set_axisbelow(True)
     ax.legend(frameon=False, fontsize=8, loc="upper left")
@@ -438,7 +440,7 @@ def render_error_distribution_figure(fault_task_rows: List[Dict[str, Any]]) -> N
         ax.bar(task_ids, values, bottom=bottoms, color=color, width=0.62, label=cls.replace("_", " "))
         bottoms = [b + v for b, v in zip(bottoms, values)]
 
-    ax.set_ylabel("Error occurrences (10 runs)")
+    ax.set_ylabel("Error occurrences")
     ax.set_title("Error class distribution across fault-injected tasks")
     ax.grid(axis="y", linestyle="--", alpha=0.35)
     ax.set_axisbelow(True)

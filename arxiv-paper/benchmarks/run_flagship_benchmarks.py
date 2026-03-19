@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import math
 import os
 import re
 import statistics
@@ -10,7 +11,7 @@ import subprocess
 import time
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import matplotlib.pyplot as plt
 from mcp import ClientSession, StdioServerParameters
@@ -22,6 +23,11 @@ ARXIV_PAPER = ROOT / "arxiv-paper"
 GENERATED = ARXIV_PAPER / "generated"
 GENERATED.mkdir(exist_ok=True)
 
+# --- Repetition counts ---
+NORMAL_REPS = 30
+FAULT_REPS = 30
+RECOVERY_REPS = 20
+STRESS_REPS = 10
 
 FLAGSHIPS = {"Modbus", "MQTT + Sparkplug B", "OPC UA"}
 TOOL_FILES = {
@@ -206,6 +212,8 @@ def classify_error(result: Dict[str, Any]) -> Optional[str]:
         return "endpoint_unavailable"
     if "timeout" in error:
         return "timeout"
+    if "out of uint16 range" in error:
+        return "range_overflow"
     if "illegal" in error or "invalid address" in error or "address" in error and "9999" in error:
         return "illegal_address"
     if "type" in error and ("mismatch" in error or "float" in error or "not_a_number" in error):
@@ -231,6 +239,33 @@ def percentile(values: List[float], pct: float) -> float:
     weight = index - lower
     value = ordered[lower] * (1.0 - weight) + ordered[upper] * weight
     return round(value, 3)
+
+
+def confidence_interval_95(values: List[float]) -> Tuple[float, float]:
+    """Compute 95% CI using t-distribution."""
+    n = len(values)
+    if n < 2:
+        mean = values[0] if values else 0.0
+        return (mean, mean)
+    mean = statistics.mean(values)
+    std = statistics.stdev(values)
+    # t-value for 95% CI, two-tailed, approximate for common df
+    # Use scipy if available, otherwise approximate
+    try:
+        from scipy.stats import t as t_dist
+        t_val = t_dist.ppf(0.975, n - 1)
+    except ImportError:
+        # Approximation for df >= 2
+        if n >= 120:
+            t_val = 1.96
+        elif n >= 30:
+            t_val = 2.042
+        elif n >= 20:
+            t_val = 2.093
+        else:
+            t_val = 2.262  # df=9
+    margin = t_val * std / math.sqrt(n)
+    return (round(mean - margin, 3), round(mean + margin, 3))
 
 
 async def discover_opcua_nodes(opcua: ClientSession) -> Dict[str, str]:
@@ -286,7 +321,7 @@ async def run_normal_tasks(
     opcua_nodes: Dict[str, str],
 ) -> List[Dict[str, Any]]:
     results: List[Dict[str, Any]] = []
-    for repetition in range(1, 11):
+    for repetition in range(1, NORMAL_REPS + 1):
         # Modbus
         started = time.perf_counter()
         call = await call_tool_json(modbus_rw, "ping", {})
@@ -508,7 +543,7 @@ async def run_normal_tasks(
             )
         )
 
-        # Cross-protocol tasks
+        # Cross-protocol tasks (sequential)
         started = time.perf_counter()
         cross_calls = [
             await call_tool_json(modbus_rw, "read_input_registers", {"address": 0, "count": 4}),
@@ -566,6 +601,51 @@ async def run_normal_tasks(
             )
         )
 
+        # X1p/X2p: Parallel cross-protocol variants (2F)
+        started = time.perf_counter()
+        parallel_reads = await asyncio.gather(
+            call_tool_json(modbus_rw, "read_input_registers", {"address": 0, "count": 4}),
+            call_tool_json(opcua, "read_multiple_opcua_nodes", {"node_ids": [opcua_nodes["Temperature"], opcua_nodes["Pressure"]]}),
+            call_tool_json(mqtt, "get_broker_info", {}),
+        )
+        results.append(
+            finalize_task(
+                "X1p",
+                "Cross-protocol",
+                "Parallel multi-adapter state snapshot across Modbus, OPC UA, and MQTT.",
+                repetition,
+                list(parallel_reads),
+                [
+                    call_correct(parallel_reads[0], True, lambda item: len(item["data"]["registers"]) == 4),
+                    call_correct(parallel_reads[1], True, lambda item: len(item["data"]["results"]) == 2),
+                    call_correct(parallel_reads[2], True, lambda item: item["data"]["connected"] is True),
+                ],
+                started,
+            )
+        )
+
+        started = time.perf_counter()
+        parallel_writes = await asyncio.gather(
+            call_tool_json(modbus_rw, "write_register", {"address": 3, "value": 60}),
+            call_tool_json(opcua, "write_opcua_node", {"node_id": opcua_nodes["PumpEnabled"], "value": True}),
+            call_tool_json(mqtt, "publish_message", {"topic": "control/line", "payload": json.dumps({"mode": "auto", "rep": repetition}), "qos": 0, "retain": False}),
+        )
+        results.append(
+            finalize_task(
+                "X2p",
+                "Cross-protocol",
+                "Parallel coordinated multi-adapter control sequence.",
+                repetition,
+                list(parallel_writes),
+                [
+                    call_correct(parallel_writes[0], True, lambda item: item["data"]["written"] == 60),
+                    call_correct(parallel_writes[1], True, lambda item: item["data"]["written_value"] is True),
+                    call_correct(parallel_writes[2], True, lambda item: item["data"]["topic"] == "control/line"),
+                ],
+                started,
+            )
+        )
+
     return results
 
 
@@ -575,14 +655,9 @@ async def run_fault_injection_tasks(
     opcua: ClientSession,
     opcua_nodes: Dict[str, str],
 ) -> List[Dict[str, Any]]:
-    """Run fault-injected tasks that exercise error handling paths.
-
-    Each task expects a structured failure or graceful degradation rather than
-    success. The benchmark judges whether the adapter returns a well-formed
-    error envelope rather than crashing or returning an unstructured response.
-    """
+    """Run fault-injected tasks that exercise error handling paths."""
     results: List[Dict[str, Any]] = []
-    for repetition in range(1, 11):
+    for repetition in range(1, FAULT_REPS + 1):
         # FM1: Modbus — read invalid register address (9999)
         started = time.perf_counter()
         call = await call_tool_json(modbus_rw, "read_register", {"address": 9999})
@@ -600,22 +675,17 @@ async def run_fault_injection_tasks(
         )
 
         # FM2: Modbus — write overflow value (70000 > uint16 max)
-        # Accept either success=false (adapter validates) or success=true with
-        # truncated/clamped value (adapter passes through and mock truncates).
+        # Adapter MUST reject with success=false (falsifiable check)
         started = time.perf_counter()
         call = await call_tool_json(modbus_rw, "write_register", {"address": 1, "value": 70000})
-        fm2_ok = (
-            not call.get("success")
-            or (call.get("success") and call.get("data", {}).get("written", 70000) != 70000)
-        )
         results.append(
             finalize_task(
                 "FM2",
                 "Modbus",
-                "Write overflow value (70000 > uint16 max) and observe adapter or mock behavior.",
+                "Write overflow value (70000 > uint16 max) and expect adapter rejection.",
                 repetition,
                 [call],
-                [fm2_ok],
+                [call_correct(call, False)],
                 started,
                 task_type="fault",
             )
@@ -698,7 +768,6 @@ async def run_fault_injection_tasks(
         )
 
         # FX1: Cross-protocol — 3-step sequence with one deliberate bad input
-        # Step 1: valid Modbus read, Step 2: invalid OPC UA node, Step 3: valid MQTT publish
         started = time.perf_counter()
         step1 = await call_tool_json(modbus_rw, "read_input_registers", {"address": 0, "count": 4})
         step2 = await call_tool_json(opcua, "read_opcua_node", {"node_id": "ns=2;i=99999"})
@@ -732,6 +801,104 @@ async def run_fault_injection_tasks(
     return results
 
 
+async def run_stress_tasks(
+    modbus_rw: ClientSession,
+    mqtt: ClientSession,
+    opcua: ClientSession,
+    opcua_nodes: Dict[str, str],
+    modbus_mock: ManagedProcess,
+    broker: ManagedProcess,
+    opcua_server: ManagedProcess,
+) -> List[Dict[str, Any]]:
+    """Run stress tests: concurrency, rapid fire, and mid-operation restart."""
+    results: List[Dict[str, Any]] = []
+
+    for repetition in range(1, STRESS_REPS + 1):
+        # S1-S3: Concurrent reads (4 parallel per adapter)
+        for task_id, family, coro_factory in [
+            ("S1", "Modbus", lambda: [call_tool_json(modbus_rw, "read_register", {"address": i}) for i in range(4)]),
+            ("S2", "MQTT", lambda: [call_tool_json(mqtt, "get_broker_info", {}) for _ in range(4)]),
+            ("S3", "OPC UA", lambda: [call_tool_json(opcua, "read_opcua_node", {"node_id": opcua_nodes["Temperature"]}) for _ in range(4)]),
+        ]:
+            started = time.perf_counter()
+            calls = await asyncio.gather(*coro_factory())
+            call_list = list(calls)
+            checks = [call_correct(c, True) for c in call_list]
+            results.append(
+                finalize_task(task_id, family, f"4 concurrent reads via {family} adapter.", repetition, call_list, checks, started, task_type="stress")
+            )
+
+        # S4-S6: Concurrent read + write (per adapter)
+        started = time.perf_counter()
+        s4_calls = await asyncio.gather(
+            call_tool_json(modbus_rw, "read_register", {"address": 0}),
+            call_tool_json(modbus_rw, "write_register", {"address": 2, "value": 100 + repetition}),
+        )
+        results.append(
+            finalize_task("S4", "Modbus", "Concurrent read + write via Modbus.", repetition, list(s4_calls), [call_correct(c, True) for c in s4_calls], started, task_type="stress")
+        )
+
+        started = time.perf_counter()
+        s5_calls = await asyncio.gather(
+            call_tool_json(mqtt, "get_broker_info", {}),
+            call_tool_json(mqtt, "publish_message", {"topic": "stress/test", "payload": "{}", "qos": 0, "retain": False}),
+        )
+        results.append(
+            finalize_task("S5", "MQTT", "Concurrent read + publish via MQTT.", repetition, list(s5_calls), [call_correct(c, True) for c in s5_calls], started, task_type="stress")
+        )
+
+        started = time.perf_counter()
+        s6_calls = await asyncio.gather(
+            call_tool_json(opcua, "read_opcua_node", {"node_id": opcua_nodes["Temperature"]}),
+            call_tool_json(opcua, "write_opcua_node", {"node_id": opcua_nodes["ValvePosition"], "value": 30.0 + repetition}),
+        )
+        results.append(
+            finalize_task("S6", "OPC UA", "Concurrent read + write via OPC UA.", repetition, list(s6_calls), [call_correct(c, True) for c in s6_calls], started, task_type="stress")
+        )
+
+        # S7-S9: Rapid fire — 50 sequential calls in tight loop
+        for task_id, family, call_factory in [
+            ("S7", "Modbus", lambda: call_tool_json(modbus_rw, "read_register", {"address": 0})),
+            ("S8", "MQTT", lambda: call_tool_json(mqtt, "get_broker_info", {})),
+            ("S9", "OPC UA", lambda: call_tool_json(opcua, "read_opcua_node", {"node_id": opcua_nodes["Temperature"]})),
+        ]:
+            started = time.perf_counter()
+            rapid_calls = []
+            for _ in range(50):
+                rapid_calls.append(await call_factory())
+            checks = [call_correct(c, True) for c in rapid_calls]
+            results.append(
+                finalize_task(task_id, family, f"50 sequential rapid-fire reads via {family}.", repetition, rapid_calls, checks, started, task_type="stress")
+            )
+
+        # S10-S12: Mid-operation mock restart during concurrent operations
+        for task_id, family, mock_proc, read_coro in [
+            ("S10", "Modbus", modbus_mock, lambda: call_tool_json(modbus_rw, "read_register", {"address": 0})),
+            ("S11", "MQTT", broker, lambda: call_tool_json(mqtt, "get_broker_info", {})),
+            ("S12", "OPC UA", opcua_server, lambda: call_tool_json(opcua, "read_opcua_node", {"node_id": opcua_nodes["Temperature"]})),
+        ]:
+            started = time.perf_counter()
+            # Fire off reads while restarting the mock
+            pre_call = await read_coro()
+            await mock_proc.stop()
+            during_call = await read_coro()
+            await mock_proc.start()
+            await asyncio.sleep(1.0)
+            post_call = await read_coro()
+            all_calls = [pre_call, during_call, post_call]
+            # pre should succeed, during should fail, post should succeed
+            checks = [
+                call_correct(pre_call, True),
+                call_correct(during_call, False),
+                call_correct(post_call, True),
+            ]
+            results.append(
+                finalize_task(task_id, family, f"Mid-operation mock restart during {family} reads.", repetition, all_calls, checks, started, task_type="stress")
+            )
+
+    return results
+
+
 def aggregate_fault_results(results: List[Dict[str, Any]]) -> Dict[str, Any]:
     """Compute per-task fault-injection summaries."""
     by_task: Dict[str, List[Dict[str, Any]]] = {}
@@ -745,6 +912,9 @@ def aggregate_fault_results(results: List[Dict[str, Any]]) -> Dict[str, Any]:
         for row in rows:
             for ec in row.get("error_classes", []):
                 error_classes[ec] = error_classes.get(ec, 0) + 1
+        mean_lat = round(statistics.mean(latencies), 3)
+        std_lat = round(statistics.stdev(latencies), 3) if len(latencies) > 1 else 0.0
+        ci_low, ci_high = confidence_interval_95(latencies)
         task_summary[task_id] = {
             "family": rows[0]["family"],
             "description": rows[0]["description"],
@@ -753,6 +923,9 @@ def aggregate_fault_results(results: List[Dict[str, Any]]) -> Dict[str, Any]:
             ),
             "median_latency_ms": round(statistics.median(latencies), 3),
             "p95_latency_ms": percentile(latencies, 95),
+            "mean_latency_ms": mean_lat,
+            "std_latency_ms": std_lat,
+            "ci95_latency_ms": [ci_low, ci_high],
             "error_class_distribution": error_classes,
         }
 
@@ -774,32 +947,43 @@ async def recovery_trial(
     stop_process: ManagedProcess,
     restart_process: ManagedProcess,
     failure_call: Callable[[], Any],
-    success_call: Callable[[], Any],
+    same_session_call: Callable[[], Any],
+    fresh_session_call: Callable[[], Any],
 ) -> Dict[str, Any]:
+    """Run a single recovery trial with dual-mode reporting."""
     started = time.perf_counter()
-    failure_result = None
-    success_result = None
 
     await stop_process.stop()
     await asyncio.sleep(0.5)
     failure_result = await failure_call()
 
     await restart_process.start()
-    await asyncio.sleep(1.0)
-    success_result = await success_call()
+    await asyncio.sleep(3.0)  # increased from 1s for reconnection time
+
+    # Attempt same-session recovery first
+    same_session_result = await same_session_call()
+    same_session_ok = bool(same_session_result.get("success"))
+
+    # Then fresh-session as fallback
+    fresh_session_result = await fresh_session_call()
+    fresh_session_ok = bool(fresh_session_result.get("success"))
 
     failure_observed = not bool(failure_result.get("success"))
-    post_restart_success = bool(success_result.get("success"))
 
     return {
         "family": family,
         "description": description,
-        "recovery_success": failure_observed and post_restart_success,
+        "recovery_success": failure_observed and (same_session_ok or fresh_session_ok),
+        "same_session_recovery": same_session_ok,
+        "fresh_session_recovery": fresh_session_ok,
+        "recovery_mode": "same_session" if same_session_ok else ("fresh_session" if fresh_session_ok else "failed"),
         "outage_detected": failure_observed,
-        "post_restart_success": post_restart_success,
+        "post_restart_success": same_session_ok or fresh_session_ok,
         "trial_latency_ms": round((time.perf_counter() - started) * 1000.0, 3),
         "failure_result": failure_result,
-        "success_result": success_result,
+        "same_session_result": same_session_result,
+        "fresh_session_result": fresh_session_result,
+        "success_result": same_session_result if same_session_ok else fresh_session_result,
     }
 
 
@@ -810,7 +994,7 @@ async def run_recovery_tasks(
 ) -> Dict[str, List[Dict[str, Any]]]:
     results = {"Modbus": [], "MQTT": [], "OPC UA": []}
 
-    for _ in range(10):
+    for _ in range(RECOVERY_REPS):
         async with mcp_session(
             "uv",
             ["run", "modbus-mcp"],
@@ -825,11 +1009,12 @@ async def run_recovery_tasks(
             await call_tool_json(session, "ping", {})
             trial = await recovery_trial(
                 "Modbus",
-                "Stop the Modbus mock, confirm a failed read, restart it, and reopen a healthy session.",
+                "Stop the Modbus mock, confirm a failed read, restart, and attempt same-session then fresh-session recovery.",
                 modbus_mock,
                 modbus_mock,
                 failure_call=lambda: call_tool_json(session, "read_register", {"address": 1}),
-                success_call=lambda: _recovery_success_call(
+                same_session_call=lambda: call_tool_json(session, "read_register", {"address": 1}),
+                fresh_session_call=lambda: _recovery_success_call(
                     "uv",
                     ["run", "modbus-mcp"],
                     ROOT / "MODBUS-Project/modbus-python",
@@ -845,7 +1030,7 @@ async def run_recovery_tasks(
             )
             results["Modbus"].append(trial)
 
-    for _ in range(10):
+    for _ in range(RECOVERY_REPS):
         async with mcp_session(
             "uv",
             ["run", "mqtt-mcp"],
@@ -860,7 +1045,7 @@ async def run_recovery_tasks(
             await call_tool_json(session, "get_broker_info", {})
             trial = await recovery_trial(
                 "MQTT",
-                "Stop the MQTT broker, confirm a failed publish, restart it, and reopen a healthy session.",
+                "Stop the MQTT broker, confirm a failed publish, restart, and attempt same-session then fresh-session recovery.",
                 broker,
                 broker,
                 failure_call=lambda: call_tool_json(
@@ -868,7 +1053,12 @@ async def run_recovery_tasks(
                     "publish_message",
                     {"topic": "control/pump", "payload": "{\"pump_speed\": 0}", "qos": 0, "retain": False},
                 ),
-                success_call=lambda: _recovery_success_call(
+                same_session_call=lambda: call_tool_json(
+                    session,
+                    "publish_message",
+                    {"topic": "control/pump", "payload": "{\"pump_speed\": 1}", "qos": 0, "retain": False},
+                ),
+                fresh_session_call=lambda: _recovery_success_call(
                     "uv",
                     ["run", "mqtt-mcp"],
                     ROOT / "MQTT-Project/mqtt-python",
@@ -884,7 +1074,7 @@ async def run_recovery_tasks(
             )
             results["MQTT"].append(trial)
 
-    for _ in range(10):
+    for _ in range(RECOVERY_REPS):
         async with mcp_session(
             "uv",
             ["run", "opcua-mcp-server.py"],
@@ -894,11 +1084,12 @@ async def run_recovery_tasks(
             await call_tool_json(session, "read_opcua_node", {"node_id": "ns=2;i=3"})
             trial = await recovery_trial(
                 "OPC UA",
-                "Stop the OPC UA mock, confirm a failed read, restart it, and reopen a healthy session.",
+                "Stop the OPC UA mock, confirm a failed read, restart, and attempt same-session then fresh-session recovery.",
                 opcua_server,
                 opcua_server,
                 failure_call=lambda: call_tool_json(session, "read_opcua_node", {"node_id": "ns=2;i=3"}),
-                success_call=lambda: _recovery_success_call(
+                same_session_call=lambda: call_tool_json(session, "read_opcua_node", {"node_id": "ns=2;i=3"}),
+                fresh_session_call=lambda: _recovery_success_call(
                     "uv",
                     ["run", "opcua-mcp-server.py"],
                     ROOT / "OPCUA-Project/opcua-mcp-server",
@@ -924,6 +1115,83 @@ async def _recovery_success_call(
         return await call_tool_json(session, tool, arguments)
 
 
+async def run_baseline_measurements(
+    modbus_mock: ManagedProcess,
+    broker: ManagedProcess,
+    opcua_server: ManagedProcess,
+) -> Dict[str, Any]:
+    """Measure baseline latency by calling mock servers directly (bypassing MCP adapter).
+
+    This provides adapter_overhead = adapter_median - baseline_median.
+    """
+    import socket
+
+    baselines: Dict[str, List[float]] = {"Modbus": [], "MQTT": [], "OPC UA": []}
+
+    # Modbus baseline: raw TCP read holding register
+    for _ in range(30):
+        start = time.perf_counter()
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(2.0)
+            s.connect(("127.0.0.1", 1502))
+            # Modbus TCP: read holding register 0, count 1
+            request = bytes([
+                0x00, 0x01,  # transaction ID
+                0x00, 0x00,  # protocol ID
+                0x00, 0x06,  # length
+                0x01,        # unit ID
+                0x03,        # function code: read holding registers
+                0x00, 0x00,  # start address
+                0x00, 0x01,  # quantity
+            ])
+            s.sendall(request)
+            s.recv(256)
+            s.close()
+            baselines["Modbus"].append((time.perf_counter() - start) * 1000.0)
+        except Exception:
+            baselines["Modbus"].append(float("nan"))
+
+    # MQTT baseline: raw TCP connect to broker
+    for _ in range(30):
+        start = time.perf_counter()
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(2.0)
+            s.connect(("127.0.0.1", 1883))
+            s.close()
+            baselines["MQTT"].append((time.perf_counter() - start) * 1000.0)
+        except Exception:
+            baselines["MQTT"].append(float("nan"))
+
+    # OPC UA baseline: raw TCP connect
+    for _ in range(30):
+        start = time.perf_counter()
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(2.0)
+            s.connect(("127.0.0.1", 4840))
+            s.close()
+            baselines["OPC UA"].append((time.perf_counter() - start) * 1000.0)
+        except Exception:
+            baselines["OPC UA"].append(float("nan"))
+
+    result = {}
+    for family, values in baselines.items():
+        clean = [v for v in values if not math.isnan(v)]
+        if clean:
+            result[family] = {
+                "median_ms": round(statistics.median(clean), 3),
+                "mean_ms": round(statistics.mean(clean), 3),
+                "std_ms": round(statistics.stdev(clean), 3) if len(clean) > 1 else 0.0,
+                "samples": len(clean),
+            }
+        else:
+            result[family] = {"median_ms": 0.0, "mean_ms": 0.0, "std_ms": 0.0, "samples": 0}
+
+    return result
+
+
 def aggregate_normal_results(results: List[Dict[str, Any]]) -> Dict[str, Any]:
     by_family: Dict[str, List[Dict[str, Any]]] = {}
     by_task: Dict[str, List[Dict[str, Any]]] = {}
@@ -935,12 +1203,18 @@ def aggregate_normal_results(results: List[Dict[str, Any]]) -> Dict[str, Any]:
     for family, rows in by_family.items():
         latencies = [row["task_latency_ms"] for row in rows]
         total_calls = sum(row["tool_calls"] for row in rows)
+        mean_lat = round(statistics.mean(latencies), 3)
+        std_lat = round(statistics.stdev(latencies), 3) if len(latencies) > 1 else 0.0
+        ci_low, ci_high = confidence_interval_95(latencies)
         family_summary[family] = {
             "tasks": len({row["task_id"] for row in rows}),
             "task_success_rate": round(sum(1 for row in rows if row["task_success"]) / len(rows), 3),
             "tool_call_success_rate": round(sum(row["tool_call_successes"] for row in rows) / total_calls, 3),
             "median_latency_ms": round(statistics.median(latencies), 3),
             "p95_latency_ms": percentile(latencies, 95),
+            "mean_latency_ms": mean_lat,
+            "std_latency_ms": std_lat,
+            "ci95_latency_ms": [ci_low, ci_high],
             "total_retries": sum(row["retry_count"] for row in rows),
         }
 
@@ -949,25 +1223,70 @@ def aggregate_normal_results(results: List[Dict[str, Any]]) -> Dict[str, Any]:
         latencies = [row["task_latency_ms"] for row in rows]
         description = rows[0]["description"]
         family = rows[0]["family"]
+        mean_lat = round(statistics.mean(latencies), 3)
+        std_lat = round(statistics.stdev(latencies), 3) if len(latencies) > 1 else 0.0
+        ci_low, ci_high = confidence_interval_95(latencies)
         task_summary[task_id] = {
             "family": family,
             "description": description,
             "task_success_rate": round(sum(1 for row in rows if row["task_success"]) / len(rows), 3),
             "median_latency_ms": round(statistics.median(latencies), 3),
             "p95_latency_ms": percentile(latencies, 95),
+            "mean_latency_ms": mean_lat,
+            "std_latency_ms": std_lat,
+            "ci95_latency_ms": [ci_low, ci_high],
         }
 
     return {"by_family": family_summary, "by_task": task_summary}
 
 
+def aggregate_stress_results(results: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Compute per-task stress-suite summaries."""
+    by_task: Dict[str, List[Dict[str, Any]]] = {}
+    for result in results:
+        by_task.setdefault(result["task_id"], []).append(result)
+
+    task_summary = {}
+    for task_id, rows in by_task.items():
+        latencies = [row["task_latency_ms"] for row in rows]
+        success_count = sum(1 for row in rows if row["task_success"])
+        failure_count = len(rows) - success_count
+        mean_lat = round(statistics.mean(latencies), 3)
+        std_lat = round(statistics.stdev(latencies), 3) if len(latencies) > 1 else 0.0
+        ci_low, ci_high = confidence_interval_95(latencies)
+        task_summary[task_id] = {
+            "family": rows[0]["family"],
+            "description": rows[0]["description"],
+            "success_rate": round(success_count / len(rows), 3),
+            "failure_count": failure_count,
+            "median_latency_ms": round(statistics.median(latencies), 3),
+            "p95_latency_ms": percentile(latencies, 95),
+            "mean_latency_ms": mean_lat,
+            "std_latency_ms": std_lat,
+            "ci95_latency_ms": [ci_low, ci_high],
+        }
+
+    overall_success = sum(1 for r in results if r["task_success"])
+    return {
+        "by_task": task_summary,
+        "overall_success_rate": round(overall_success / len(results), 3) if results else 0.0,
+        "total_runs": len(results),
+        "total_tool_calls": sum(r["tool_calls"] for r in results),
+    }
+
+
 def aggregate_recovery_results(results: Dict[str, List[Dict[str, Any]]]) -> Dict[str, Any]:
     summary = {}
     for family, rows in results.items():
+        same_session_count = sum(1 for row in rows if row.get("same_session_recovery"))
+        fresh_session_count = sum(1 for row in rows if row.get("fresh_session_recovery"))
         summary[family] = {
             "recovery_success_rate": round(
                 sum(1 for row in rows if row["recovery_success"]) / len(rows),
                 3,
             ),
+            "same_session_recovery_rate": round(same_session_count / len(rows), 3),
+            "fresh_session_recovery_rate": round(fresh_session_count / len(rows), 3),
             "outage_detection_rate": round(
                 sum(1 for row in rows if row["outage_detected"]) / len(rows),
                 3,
@@ -1005,26 +1324,72 @@ def build_protocol_inventory() -> List[Dict[str, Any]]:
 def write_recovery_figure(summary: Dict[str, Any]) -> Path:
     output_path = GENERATED / "flagship_recovery.png"
     labels = ["Modbus", "MQTT", "OPC UA"]
-    values = [summary[label]["recovery_success_rate"] * 100.0 for label in labels]
 
-    fig, ax = plt.subplots(figsize=(5.0, 2.8), constrained_layout=True)
-    colors = ["#0F766E", "#1D4ED8", "#B45309"]
-    bars = ax.bar(labels, values, color=colors, width=0.58)
-    ax.set_ylim(0, 100)
+    same_session = [summary[label].get("same_session_recovery_rate", 0.0) * 100.0 for label in labels]
+    fresh_session = [summary[label].get("fresh_session_recovery_rate", 0.0) * 100.0 for label in labels]
+
+    fig, ax = plt.subplots(figsize=(6.0, 3.2), constrained_layout=True)
+    x = range(len(labels))
+    width = 0.32
+    colors_same = ["#0F766E", "#1D4ED8", "#B45309"]
+    colors_fresh = ["#5EEAD4", "#93C5FD", "#FCD34D"]
+
+    bars_same = ax.bar([i - width / 2 for i in x], same_session, width, color=colors_same, label="Same session")
+    bars_fresh = ax.bar([i + width / 2 for i in x], fresh_session, width, color=colors_fresh, label="Fresh session")
+
+    ax.set_xticks(list(x))
+    ax.set_xticklabels(labels)
+    ax.set_ylim(0, 110)
     ax.set_ylabel("Recovery success (%)")
-    ax.set_title("Post-restart recovery over 10 trials")
+    ax.set_title(f"Post-restart recovery over {RECOVERY_REPS} trials (same-session vs fresh-session)")
     ax.grid(axis="y", linestyle="--", linewidth=0.6, alpha=0.5)
     ax.set_axisbelow(True)
+    ax.legend(frameon=False, fontsize=8)
 
-    for bar, value in zip(bars, values):
-        ax.text(
-            bar.get_x() + bar.get_width() / 2.0,
-            value + 2.0,
-            f"{value:.0f}%",
-            ha="center",
-            va="bottom",
-            fontsize=9,
-        )
+    for bars in [bars_same, bars_fresh]:
+        for bar in bars:
+            height = bar.get_height()
+            if height > 0:
+                ax.text(
+                    bar.get_x() + bar.get_width() / 2.0,
+                    height + 1.5,
+                    f"{height:.0f}%",
+                    ha="center",
+                    va="bottom",
+                    fontsize=8,
+                )
+
+    fig.savefig(output_path, dpi=220)
+    plt.close(fig)
+    return output_path
+
+
+def write_latency_boxplot(normal_results: List[Dict[str, Any]]) -> Path:
+    """Generate per-task latency distribution box plot (Phase 6B)."""
+    output_path = GENERATED.parent / "figures" / "fig7_latency_boxplot.png"
+    output_path.parent.mkdir(exist_ok=True)
+
+    task_order = ["M1", "M2", "M3", "M4", "Q1", "Q2", "Q3", "Q4", "O1", "O2", "O3", "O4", "X1", "X2", "X1p", "X2p"]
+    by_task: Dict[str, List[float]] = {}
+    for r in normal_results:
+        by_task.setdefault(r["task_id"], []).append(r["task_latency_ms"])
+
+    present_tasks = [t for t in task_order if t in by_task]
+    data = [by_task[t] for t in present_tasks]
+
+    fig, ax = plt.subplots(figsize=(10, 4), constrained_layout=True)
+    bp = ax.boxplot(data, labels=present_tasks, patch_artist=True)
+
+    family_colors = {"M": "#0F766E", "Q": "#1D4ED8", "O": "#B45309", "X": "#6B7280"}
+    for i, task_id in enumerate(present_tasks):
+        color = family_colors.get(task_id[0], "#9CA3AF")
+        bp["boxes"][i].set_facecolor(color)
+        bp["boxes"][i].set_alpha(0.6)
+
+    ax.set_ylabel("Latency (ms)")
+    ax.set_title(f"Per-task latency distributions ({NORMAL_REPS} repetitions)")
+    ax.grid(axis="y", linestyle="--", alpha=0.4)
+    ax.set_axisbelow(True)
 
     fig.savefig(output_path, dpi=220)
     plt.close(fig)
@@ -1066,6 +1431,9 @@ async def main() -> None:
         await opcua_server.start()
         await asyncio.sleep(1.0)
 
+        # Baseline measurements (2G)
+        baseline_measurements = await run_baseline_measurements(modbus_mock, broker, opcua_server)
+
         async with mcp_session(
             "uv",
             ["run", "modbus-mcp"],
@@ -1106,30 +1474,59 @@ async def main() -> None:
             opcua_nodes = await discover_opcua_nodes(opcua)
             normal_results = await run_normal_tasks(modbus_rw, modbus_ro, mqtt, opcua, opcua_nodes)
             fault_results = await run_fault_injection_tasks(modbus_rw, mqtt, opcua, opcua_nodes)
+            stress_results = await run_stress_tasks(modbus_rw, mqtt, opcua, opcua_nodes, modbus_mock, broker, opcua_server)
 
         recovery_results = await run_recovery_tasks(modbus_mock, broker, opcua_server)
         normal_summary = aggregate_normal_results(normal_results)
         fault_summary = aggregate_fault_results(fault_results)
+        stress_summary = aggregate_stress_results(stress_results)
         recovery_summary = aggregate_recovery_results(recovery_results)
         protocol_inventory = build_protocol_inventory()
         recovery_figure = write_recovery_figure(recovery_summary)
+        latency_boxplot = write_latency_boxplot(normal_results)
+
+        # Compute exact tool call counts (2E)
+        normal_tool_calls = sum(r["tool_calls"] for r in normal_results)
+        fault_tool_calls = sum(r["tool_calls"] for r in fault_results)
+        stress_tool_calls = sum(r["tool_calls"] for r in stress_results)
+        exact_tool_call_counts = {
+            "normal": normal_tool_calls,
+            "fault": fault_tool_calls,
+            "stress": stress_tool_calls,
+            "total": normal_tool_calls + fault_tool_calls + stress_tool_calls,
+        }
 
         payload = {
             "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "repetition_counts": {
+                "normal": NORMAL_REPS,
+                "fault": FAULT_REPS,
+                "recovery": RECOVERY_REPS,
+                "stress": STRESS_REPS,
+            },
             "normal_tasks": normal_results,
             "normal_summary": normal_summary,
             "fault_injection_tasks": fault_results,
             "fault_injection_summary": fault_summary,
+            "stress_tasks": stress_results,
+            "stress_summary": stress_summary,
             "recovery_trials": recovery_results,
             "recovery_summary": recovery_summary,
+            "baseline_measurements": baseline_measurements,
+            "exact_tool_call_counts": exact_tool_call_counts,
             "protocol_inventory": protocol_inventory,
-            "artifacts": {"recovery_figure": str(recovery_figure.relative_to(ROOT))},
+            "artifacts": {
+                "recovery_figure": str(recovery_figure.relative_to(ROOT)),
+                "latency_boxplot": str(latency_boxplot.relative_to(ROOT)),
+            },
         }
 
         output_path = GENERATED / "flagship_benchmark_results.json"
         output_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
         print(f"Wrote benchmark results to {output_path}")
         print(f"Wrote recovery figure to {recovery_figure}")
+        print(f"Wrote latency boxplot to {latency_boxplot}")
+        print(f"Exact tool call counts: {exact_tool_call_counts}")
     finally:
         await mqtt_mock.stop()
         await broker.stop()

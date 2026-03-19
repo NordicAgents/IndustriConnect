@@ -10,55 +10,63 @@
 \newlabel{fig:architecture}{{1}{2}{}{figure.1}{}}
 \@writefile{lot}{\contentsline {table}{\numberline {I}{\ignorespaces Shared response-envelope fields used across the benchmarked adapters.}}{2}{}\protected@file@percent }
 \newlabel{tab:envelope}{{I}{2}{}{table.1}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {II}{\ignorespaces Repository protocol inventory. Tool counts come from registered handlers in the benchmark pass.}}{2}{}\protected@file@percent }
-\newlabel{tab:inventory}{{II}{2}{}{table.2}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {III}Prototype Implementation}{2}{}\protected@file@percent }
 \newlabel{sec:implementation}{{III}{2}{}{section.3}{}}
 \citation{yao2022react}
+\@writefile{lot}{\contentsline {table}{\numberline {II}{\ignorespaces Repository protocol inventory. Tool counts come from registered handlers in the benchmark pass.\footnotemark }}{3}{}\protected@file@percent }
+\newlabel{tab:inventory}{{II}{3}{}{table.2}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Repository protocol landscape with the three evaluated flagship adapters highlighted. This figure is supporting context, not evaluation evidence.}}{3}{}\protected@file@percent }
 \newlabel{fig:protocolmap}{{2}{3}{}{figure.2}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces MCP Manager UI used to register adapters and issue operator-style prompts. This figure is supporting context, not benchmark evidence.}}{3}{}\protected@file@percent }
 \newlabel{fig:managerui}{{3}{3}{}{figure.3}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {IV}Experimental Setup}{3}{}\protected@file@percent }
-\newlabel{sec:setup}{{IV}{3}{}{section.4}{}}
 \citation{natella2016faultinjection}
 \@writefile{lot}{\contentsline {table}{\numberline {III}{\ignorespaces Benchmark matrix for the two-layer evaluation.}}{4}{}\protected@file@percent }
 \newlabel{tab:tasks}{{III}{4}{}{table.3}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {IV}Experimental Setup}{4}{}\protected@file@percent }
+\newlabel{sec:setup}{{IV}{4}{}{section.4}{}}
 \@writefile{lot}{\contentsline {table}{\numberline {IV}{\ignorespaces Benchmark runtime configuration used in the paper.}}{4}{}\protected@file@percent }
 \newlabel{tab:runtime}{{IV}{4}{}{table.4}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {V}{\ignorespaces Family-level results from the normal benchmark suite. Cross-protocol rows aggregate the two multi-adapter tasks only.}}{4}{}\protected@file@percent }
-\newlabel{tab:results}{{V}{4}{}{table.5}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {V}Results}{4}{}\protected@file@percent }
 \newlabel{sec:results}{{V}{4}{}{section.5}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-A}}Normal Suite Results}{4}{}\protected@file@percent }
 \newlabel{sec:results:normal}{{\mbox  {V-A}}{4}{}{subsection.5.1}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {VI}{\ignorespaces Per-task latency breakdown from the normal benchmark suite.}}{5}{}\protected@file@percent }
-\newlabel{tab:taskbreakdown}{{VI}{5}{}{table.6}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {VII}{\ignorespaces Fault-injection task results. Error-handling rate measures how often the adapter returned a well-formed structured error.}}{5}{}\protected@file@percent }
-\newlabel{tab:faultresults}{{VII}{5}{}{table.7}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {V}{\ignorespaces Family-level results from the normal benchmark suite (30 repetitions). Cross-protocol rows aggregate the four multi-adapter tasks.}}{5}{}\protected@file@percent }
+\newlabel{tab:results}{{V}{5}{}{table.5}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Per-task latency distributions across 30 repetitions. Box plots show median, interquartile range, and outliers.}}{5}{}\protected@file@percent }
+\newlabel{fig:latencyboxplot}{{4}{5}{}{figure.4}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Error class distribution across the seven fault-injected tasks (30 runs each). Each color represents a distinct error category returned by the adapter.}}{5}{}\protected@file@percent }
+\newlabel{fig:errordist}{{5}{5}{}{figure.5}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-B}}Fault Injection Results}{5}{}\protected@file@percent }
 \newlabel{sec:results:fault}{{\mbox  {V-B}}{5}{}{subsection.5.2}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Error class distribution across the seven fault-injected tasks (10 runs each). Each color represents a distinct error category returned by the adapter.}}{5}{}\protected@file@percent }
-\newlabel{fig:errordist}{{4}{5}{}{figure.4}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Recovery-phase breakdown over 10 restart trials per flagship adapter.}}{5}{}\protected@file@percent }
-\newlabel{fig:recovery}{{5}{5}{}{figure.5}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-C}}Recovery Results}{5}{}\protected@file@percent }
-\newlabel{sec:results:recovery}{{\mbox  {V-C}}{5}{}{subsection.5.3}{}}
-\citation{qin2024toolllm,li2023apibank}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-C}}Stress Suite Results}{5}{}\protected@file@percent }
+\newlabel{sec:results:stress}{{\mbox  {V-C}}{5}{}{subsection.5.3}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {VI}{\ignorespaces Per-task latency breakdown from the normal benchmark suite (30 repetitions).}}{6}{}\protected@file@percent }
+\newlabel{tab:taskbreakdown}{{VI}{6}{}{table.6}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {VII}{\ignorespaces Fault-injection task results (30 repetitions). Error-handling rate measures how often the adapter returned a well-formed structured error.}}{6}{}\protected@file@percent }
+\newlabel{tab:faultresults}{{VII}{6}{}{table.7}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-D}}Recovery Results}{6}{}\protected@file@percent }
+\newlabel{sec:results:recovery}{{\mbox  {V-D}}{6}{}{subsection.5.4}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Recovery success rates over 30{} restart trials per flagship adapter, comparing same-session recovery (adapter reconnects transparently) versus fresh-session recovery (new MCP session).}}{6}{}\protected@file@percent }
+\newlabel{fig:recovery}{{6}{6}{}{figure.6}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Recovery-phase breakdown per flagship adapter.}}{6}{}\protected@file@percent }
+\newlabel{fig:recoverybreakdown}{{7}{6}{}{figure.7}{}}
+\citation{qin2024toolllm}
 \citation{lasi2014industry40,xu2018industry4,wollschlaeger2017future,lee2015cps,monostori2016cps,zhong2017intelligent,tilbury2019cpms}
 \citation{cavalieri2013opcua,mishra2020mqtt,cavalieri2021onem2m,buechter2022plug}
 \citation{tilbury2019cpms,fuller2020digital,lu2020digitaltwin}
 \citation{natella2016faultinjection}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-E}}Quantitative LLM Assessment}{7}{}\protected@file@percent }
+\newlabel{sec:results:llm}{{\mbox  {V-E}}{7}{}{subsection.5.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-F}}Security Considerations}{7}{}\protected@file@percent }
+\newlabel{sec:results:security}{{\mbox  {V-F}}{7}{}{subsection.5.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-G}}Limitations}{7}{}\protected@file@percent }
+\newlabel{sec:results:limitations}{{\mbox  {V-G}}{7}{}{subsection.5.7}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {VI}Related Work}{7}{}\protected@file@percent }
+\newlabel{sec:related}{{VI}{7}{}{section.6}{}}
 \citation{yao2022react,schick2023toolformer,patil2023gorilla,qiao2024executionfeedback}
 \citation{qin2024toolllm}
 \citation{li2023apibank}
 \citation{anthropic2024mcp}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-D}}Assistant-Level Usability Assessment}{6}{}\protected@file@percent }
-\newlabel{sec:results:llm}{{\mbox  {V-D}}{6}{}{subsection.5.4}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-E}}Limitations}{6}{}\protected@file@percent }
-\newlabel{sec:results:limitations}{{\mbox  {V-E}}{6}{}{subsection.5.5}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {VI}Related Work}{6}{}\protected@file@percent }
-\newlabel{sec:related}{{VI}{6}{}{section.6}{}}
 \bibstyle{IEEEtran}
 \bibdata{references}
 \bibcite{xu2018industry4}{1}
@@ -82,7 +90,7 @@
 \bibcite{schick2023toolformer}{19}
 \bibcite{patil2023gorilla}{20}
 \bibcite{qiao2024executionfeedback}{21}
-\@writefile{toc}{\contentsline {section}{\numberline {VII}Conclusion}{7}{}\protected@file@percent }
-\newlabel{sec:conclusion}{{VII}{7}{}{section.7}{}}
-\@writefile{toc}{\contentsline {section}{References}{7}{}\protected@file@percent }
-\gdef \@abspage@last{7}
+\@writefile{toc}{\contentsline {section}{\numberline {VII}Conclusion}{8}{}\protected@file@percent }
+\newlabel{sec:conclusion}{{VII}{8}{}{section.7}{}}
+\@writefile{toc}{\contentsline {section}{References}{8}{}\protected@file@percent }
+\gdef \@abspage@last{8}

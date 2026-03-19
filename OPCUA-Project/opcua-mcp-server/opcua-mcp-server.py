@@ -81,10 +81,35 @@ def _client() -> Client:
     return _OPCUA_CLIENT
 
 
+async def _ensure_connected() -> Client:
+    """Return a healthy OPC UA client, reconnecting if the current one is stale."""
+    global _OPCUA_CLIENT
+    client = _OPCUA_CLIENT
+    if client is not None:
+        try:
+            # Liveness probe: read the ServerStatus node
+            server_node = client.get_node("ns=0;i=2259")
+            await asyncio.to_thread(server_node.get_value)
+            return client
+        except Exception:
+            # Stale connection — tear it down
+            try:
+                await asyncio.to_thread(client.disconnect)
+            except Exception:
+                pass
+            _OPCUA_CLIENT = None
+
+    # Create a fresh connection
+    new_client = Client(SERVER_URL)
+    await asyncio.to_thread(new_client.connect)
+    _OPCUA_CLIENT = new_client
+    return new_client
+
+
 @mcp.tool()
 async def read_opcua_node(node_id: str) -> Dict[str, Any]:
     """Read the value of a specific OPC UA node."""
-    client = _client()
+    client = await _ensure_connected()
     start = time.perf_counter()
     try:
         node = client.get_node(node_id)
@@ -105,7 +130,7 @@ async def read_opcua_node(node_id: str) -> Dict[str, Any]:
 @mcp.tool()
 async def write_opcua_node(node_id: str, value: Any) -> Dict[str, Any]:
     """Write a value to a specific OPC UA node."""
-    client = _client()
+    client = await _ensure_connected()
     start = time.perf_counter()
     try:
         node = client.get_node(node_id)
@@ -128,7 +153,7 @@ async def write_opcua_node(node_id: str, value: Any) -> Dict[str, Any]:
 @mcp.tool()
 async def browse_opcua_node_children(node_id: str) -> Dict[str, Any]:
     """Browse the children of a specific OPC UA node."""
-    client = _client()
+    client = await _ensure_connected()
     start = time.perf_counter()
     try:
         node = client.get_node(node_id)
@@ -162,7 +187,7 @@ async def call_opcua_method(
     arguments: Optional[List[Any]] = None,
 ) -> Dict[str, Any]:
     """Call a method on a specific OPC UA object node."""
-    client = _client()
+    client = await _ensure_connected()
     start = time.perf_counter()
     method_args = arguments or []
     try:
@@ -194,7 +219,7 @@ async def call_opcua_method(
 @mcp.tool()
 async def read_multiple_opcua_nodes(node_ids: List[str]) -> Dict[str, Any]:
     """Read multiple OPC UA nodes in a single tool call."""
-    client = _client()
+    client = await _ensure_connected()
     start = time.perf_counter()
     results = []
     success = True
@@ -217,7 +242,7 @@ async def read_multiple_opcua_nodes(node_ids: List[str]) -> Dict[str, Any]:
 @mcp.tool()
 async def write_multiple_opcua_nodes(nodes_to_write: List[Dict[str, Any]]) -> Dict[str, Any]:
     """Write multiple OPC UA nodes in a single tool call."""
-    client = _client()
+    client = await _ensure_connected()
     start = time.perf_counter()
     results = []
     success = True
@@ -297,7 +322,7 @@ def _discover_variables(client: Client) -> List[Dict[str, Any]]:
 @mcp.tool()
 async def get_all_variables() -> Dict[str, Any]:
     """Return the non-server OPC UA variables exposed by the connected endpoint."""
-    client = _client()
+    client = await _ensure_connected()
     start = time.perf_counter()
     try:
         variables_info = await asyncio.to_thread(_discover_variables, client)
