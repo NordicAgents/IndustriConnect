@@ -14,6 +14,7 @@ OUTPUT_PATH = ROOT / "generated" / "flagship_recovery_latency.png"
 def main() -> None:
     payload = json.loads(RESULTS_PATH.read_text())
     recovery = payload["recovery_summary"]
+    recovery_reps = payload.get("repetition_counts", {}).get("recovery", 20)
 
     labels = ["Modbus", "MQTT", "OPC UA"]
     seconds = [recovery[label]["median_trial_latency_ms"] / 1000.0 for label in labels]
@@ -26,7 +27,7 @@ def main() -> None:
     bars = ax.bar(labels, seconds, color=colors, width=0.6)
 
     ax.set_ylabel("Median recovery latency (s)")
-    ax.set_title("Post-restart recovery benchmark (10 trials per flagship stack)")
+    ax.set_title(f"Post-restart recovery benchmark ({recovery_reps} trials per flagship stack)")
     ax.set_ylim(0.0, max(seconds) * 1.28)
     ax.grid(axis="y", linestyle="--", alpha=0.35)
     ax.grid(axis="x", visible=False)

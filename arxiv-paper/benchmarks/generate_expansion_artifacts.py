@@ -355,7 +355,7 @@ def render_support_context_figure() -> None:
     canvas.save(SUPPORT_CONTEXT_PATH, format="PNG")
 
 
-def render_recovery_breakdown_figure(recovery_rows: List[Dict[str, Any]]) -> None:
+def render_recovery_breakdown_figure(recovery_rows: List[Dict[str, Any]], recovery_reps: int = 20) -> None:
     labels = [row["family"] for row in recovery_rows]
     failure = [row["median_failure_phase_ms"] / 1000.0 for row in recovery_rows]
     restart = [row["median_restart_to_healthy_ms"] / 1000.0 for row in recovery_rows]
@@ -366,7 +366,7 @@ def render_recovery_breakdown_figure(recovery_rows: List[Dict[str, Any]]) -> Non
     bars_restart = ax.bar(labels, restart, bottom=failure, color=colors["restart"], width=0.62, label="restart to healthy response")
 
     ax.set_ylabel("Median recovery time (s)")
-    ax.set_title("Recovery phase breakdown per flagship adapter")
+    ax.set_title(f"Recovery phase breakdown over {recovery_reps} restart trials per flagship adapter")
     ax.grid(axis="y", linestyle="--", alpha=0.35)
     ax.set_axisbelow(True)
     ax.legend(frameon=False, fontsize=8, loc="upper left")
@@ -406,7 +406,7 @@ def render_recovery_breakdown_figure(recovery_rows: List[Dict[str, Any]]) -> Non
     plt.close(fig)
 
 
-def render_error_distribution_figure(fault_task_rows: List[Dict[str, Any]]) -> None:
+def render_error_distribution_figure(fault_task_rows: List[Dict[str, Any]], fault_reps: int = 30) -> None:
     if not fault_task_rows:
         return
 
@@ -440,7 +440,7 @@ def render_error_distribution_figure(fault_task_rows: List[Dict[str, Any]]) -> N
         ax.bar(task_ids, values, bottom=bottoms, color=color, width=0.62, label=cls.replace("_", " "))
         bottoms = [b + v for b, v in zip(bottoms, values)]
 
-    ax.set_ylabel("Error occurrences")
+    ax.set_ylabel(f"Error occurrences ({fault_reps} runs)")
     ax.set_title("Error class distribution across fault-injected tasks")
     ax.grid(axis="y", linestyle="--", alpha=0.35)
     ax.set_axisbelow(True)
@@ -457,11 +457,18 @@ def main() -> None:
     FIGURES.mkdir(exist_ok=True)
 
     results = load_results()
+    rep_counts = results.get("repetition_counts", {})
     summary = write_summary_json(results)
     render_protocol_map(summary["protocol_rows"])
     render_support_context_figure()
-    render_recovery_breakdown_figure(summary["recovery_phase_rows"])
-    render_error_distribution_figure(summary.get("fault_task_rows", []))
+    render_recovery_breakdown_figure(
+        summary["recovery_phase_rows"],
+        recovery_reps=rep_counts.get("recovery", 20),
+    )
+    render_error_distribution_figure(
+        summary.get("fault_task_rows", []),
+        fault_reps=rep_counts.get("fault", 30),
+    )
 
     print(f"Wrote summary JSON to {SUMMARY_PATH}")
     print(f"Wrote protocol map to {PROTOCOL_MAP_PATH}")

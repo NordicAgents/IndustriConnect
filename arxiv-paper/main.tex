@@ -7,6 +7,8 @@
 \usepackage{array}
 \usepackage{url}
 \usepackage{multirow}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,fit,backgrounds,calc}
 
 \newcolumntype{Y}{>{\raggedright\arraybackslash}X}
 \newcommand{\system}{\textsc{IndustriConnect}}
@@ -88,8 +90,100 @@ The evaluation uses a deterministic benchmark that exercises adapter behavior un
 
 \begin{figure}[t]
     \centering
-    \includegraphics[width=0.9\columnwidth]{figures/fig1_architecture.png}
-    \caption{\system\ exposes industrial protocol clients as MCP servers so an AI assistant can invoke them through a common tool interface while targeting either mocks or real devices.}
+    \resizebox{0.95\columnwidth}{!}{%
+    \begin{tikzpicture}[
+        >=Stealth,
+        box/.style={draw, rounded corners=3pt, minimum height=0.7cm,
+                     text centered, font=\small},
+        layer/.style={box, minimum width=6.8cm, font=\small\bfseries},
+        proto/.style={box, minimum width=1.8cm, minimum height=0.55cm,
+                      font=\scriptsize\bfseries},
+        scaffold/.style={proto, draw=gray!60, fill=gray!8, text=gray!70,
+                         densely dashed},
+        envfield/.style={font=\tiny\ttfamily, text=black!70},
+        arrlab/.style={font=\scriptsize, fill=white, inner sep=1pt},
+    ]
+    % --- Layer 1: AI Assistant ---
+    \node[layer, fill=blue!8, draw=blue!50] (ai)
+        {MCP Client / AI Assistant};
+    \node[font=\tiny, text=black!55, below=0.02cm of ai]
+        (aisub) {Claude Desktop\;\textperiodcentered\;
+                  mcp-manager-ui\;\textperiodcentered\;
+                  Custom LLM app};
+
+    % --- Arrow 1 ---
+    \draw[<->, thick, blue!60]
+        ($(aisub.south)+(0,-0.15)$) -- ++(0,-0.55)
+        node[arrlab, midway, right=2pt] {stdio / JSON-RPC 2.0 (MCP)};
+
+    % --- Layer 2: Adapter ---
+    \node[layer, fill=teal!8, draw=teal!60,
+          below=1.35cm of aisub] (adapter)
+        {\system{} Protocol MCP Server};
+    \node[font=\tiny, text=black!55, below=0.02cm of adapter]
+        (adsub) {FastMCP\;\textperiodcentered\;asyncio
+                 \;\textperiodcentered\;write guards};
+
+    % --- Envelope ---
+    \node[draw=teal!40, rounded corners=2pt, fill=teal!4,
+          inner sep=3pt, font=\tiny,
+          below=0.18cm of adsub] (env)
+        {\texttt{%
+          \{success, data, error, meta\}}};
+
+    % --- Arrow 2 (splits to 3 protocols) ---
+    \coordinate (split) at ($(env.south)+(0,-0.45)$);
+    \draw[->, thick, orange!70] (env.south) -- (split);
+
+    % --- Protocol nodes ---
+    \node[proto, fill=blue!12, draw=blue!50,
+          below left=0.6cm and 1.6cm of split] (modbus) {Modbus};
+    \node[proto, fill=blue!12, draw=blue!50,
+          below=0.6cm of split] (mqtt) {MQTT/SB};
+    \node[proto, fill=blue!12, draw=blue!50,
+          below right=0.6cm and 1.6cm of split] (opcua) {OPC\,UA};
+
+    \draw[->, thick, orange!70] (split) -- (modbus.north);
+    \draw[->, thick, orange!70] (split) -- (mqtt.north);
+    \draw[->, thick, orange!70] (split) -- (opcua.north);
+
+    % --- Scaffold badges ---
+    \node[scaffold, below=0.25cm of modbus, minimum width=1.2cm]
+        (s1) {BACnet};
+    \node[scaffold, right=0.12cm of s1, minimum width=1.0cm]
+        (s2) {DNP3};
+    \node[scaffold, below=0.25cm of mqtt, minimum width=1.4cm]
+        (s3) {EtherCAT};
+    \node[scaffold, right=0.12cm of s3, minimum width=1.5cm]
+        (s4) {EtherNet/IP};
+    \node[scaffold, below=0.25cm of opcua, minimum width=1.3cm]
+        (s5) {S7comm};
+    \node[scaffold, right=0.12cm of s5, minimum width=1.0cm]
+        (s6) {\dots};
+
+    % --- Layer 3: Device targets ---
+    \coordinate (devtop) at ($(s3.south)+(0,-0.4)$);
+    \node[box, fill=green!8, draw=green!50, minimum width=3.0cm,
+          below left=0.65cm and 0.8cm of devtop] (mock)
+        {Mock Simulator};
+    \node[box, fill=orange!8, draw=orange!50, minimum width=3.0cm,
+          below right=0.65cm and 0.8cm of devtop] (real)
+        {Real PLC / RTU};
+    \node[font=\tiny, text=black!55, below=0.01cm of mock]
+        {Offline testing};
+    \node[font=\tiny, text=black!55, below=0.01cm of real]
+        {Plant deployment};
+
+    \draw[->, thick, green!60, dashed]
+        ($(s3.south)+(0,-0.15)$) -- (mock.north)
+        node[arrlab, midway, left=1pt] {\scriptsize mock};
+    \draw[->, thick, orange!60]
+        ($(s3.south)+(0,-0.15)$) -- (real.north)
+        node[arrlab, midway, right=1pt] {\scriptsize live};
+
+    \end{tikzpicture}%
+    }
+    \caption{\system\ adapter architecture. An AI assistant issues MCP tool calls through a common JSON-RPC interface. The adapter layer handles protocol translation and safety guards, returning a shared response envelope. Each protocol adapter targets either a local mock (dashed) or real plant equipment.}
     \label{fig:architecture}
 \end{figure}
 
@@ -317,6 +411,8 @@ The stress suite is designed to produce non-zero failure rates, unlike the norma
 \textbf{Rapid-fire reads (S7--S9).} Fifty sequential calls in a tight loop per adapter test sustained throughput. Boundary latencies reveal whether the adapter or mock server introduces queuing under load.
 
 \textbf{Mid-operation restart (S10--S12).} These tasks fire a read, stop the mock, fire another read (expected to fail), restart the mock, and fire a final read (expected to succeed). The three-phase check verifies that adapter state does not become permanently corrupted after a transient endpoint failure. Partial success (2/3 calls correct) is the expected outcome.
+
+\textbf{S11 (MQTT mid-restart) failure analysis.} The MQTT mid-operation restart task (S11) is the only stress scenario that reports 0\% success rate, and this result warrants detailed discussion. After the broker is stopped and restarted, the paho MQTT client's internal reconnect timer does not fire within the 1-second post-restart window used by the stress harness. In contrast, Modbus (S10) recovers because pymodbus auto-reconnect retries on the next call, and OPC UA (S12) recovers because the adapter's liveness probe forces a fresh connection attempt. The MQTT adapter relies on paho's \texttt{reconnect\_delay\_set} background loop, which uses exponential backoff starting at 1\,s---so the first reconnect attempt may not land within the tight stress window. This is a genuine protocol-specific limitation, not a test artifact. The recovery suite (Section~\ref{sec:results:recovery}) uses a 3-second post-restart window and dual-mode reporting, which gives paho enough time to reconnect, explaining why MQTT achieves 100\% recovery there. The practical implication is that MQTT adapter deployments should tune the reconnect delay for their expected outage profile, or add an explicit reconnect-on-failure path analogous to the OPC UA liveness probe.
 
 \subsection{Recovery Results}
 \label{sec:results:recovery}
