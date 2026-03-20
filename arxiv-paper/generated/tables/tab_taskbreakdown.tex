@@ -1,0 +1,25 @@
+    \begin{tabularx}{\textwidth}{@{}llYcc@{}}
+        \toprule
+        ID & Family & Operation & Median (ms) & p95 (ms) \\
+        \midrule
+        M1 & Modbus & Ping the adapter and confirm the TCP mock is reachable. & 1.1 & 1.4 \\
+        M2 & Modbus & Read a four-register sensor block from the Modbus mock. & 1.5 & 1.7 \\
+        M3 & Modbus & Write a holding register and read it back for verification. & 2.7 & 3.3 \\
+        M4 & Modbus & Attempt a write with writes disabled and expect a guarded rejection. & 1.3 & 1.6 \\
+        \midrule
+        Q1 & MQTT & Inspect broker connectivity through the MCP adapter. & 1.8 & 2.1 \\
+        Q2 & MQTT & Subscribe to the mock sensor topic namespace. & 1.7 & 2.7 \\
+        Q3 & MQTT & Publish a standard MQTT control payload. & 1.7 & 2.2 \\
+        Q4 & MQTT & Publish a Sparkplug B DDATA update for the mock device. & 1.6 & 2.3 \\
+        \midrule
+        O1 & OPC UA & Read the temperature sensor variable from the OPC UA mock plant. & 3.0 & 4.2 \\
+        O2 & OPC UA & Browse the actuator subtree in the mock plant. & 7.6 & 9.0 \\
+        O3 & OPC UA & Write the valve-position variable and confirm the new value. & 5.9 & 8.4 \\
+        O4 & OPC UA & Enumerate the mock plant variables through the adapter. & 103.9 & 108.2 \\
+        \midrule
+        X1 & Cross-protocol & Collect a multi-adapter state snapshot across Modbus, OPC UA, and MQTT. & 7.4 & 8.8 \\
+        X2 & Cross-protocol & Execute a coordinated multi-adapter control sequence. & 7.1 & 8.7 \\
+        X1p & Cross-protocol & Parallel multi-adapter state snapshot across Modbus, OPC UA, and MQTT. & 3.8 & 5.3 \\
+        X2p & Cross-protocol & Parallel coordinated multi-adapter control sequence. & 3.7 & 5.0 \\
+        \bottomrule
+    \end{tabularx}

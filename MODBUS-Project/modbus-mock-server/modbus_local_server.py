@@ -72,7 +72,8 @@ def build_context() -> ModbusServerContext:
     di.setValues(0, di_values)
 
     device = ModbusDeviceContext(di=di, co=co, hr=hr, ir=ir)
-    context = ModbusServerContext(devices={0x00: device}, single=True)
+    # In single-device mode pymodbus expects the device context directly, not a dict.
+    context = ModbusServerContext(devices=device, single=True)
     return context
 
 
