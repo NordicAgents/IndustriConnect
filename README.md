@@ -214,3 +214,16 @@ For a deeper dive into the motivation, architecture, and design decisions behind
 
 Please open issues or pull requests in the relevant project, following any contribution guidelines in that folder’s README or roadmap.
 
+## 📌 Citation
+If you use this work, please cite:
+
+```bibtex
+@misc{xavier2026industriconnectmcpadaptersmockfirst,
+  title={IndustriConnect: MCP Adapters and Mock-First Evaluation for AI-Assisted Industrial Operations},
+  author={Melwin Xavier and Melveena Jolly and Vaisakh M A and Midhun Xavier},
+  year={2026},
+  eprint={2603.24703},
+  archivePrefix={arXiv},
+  primaryClass={cs.SE},
+  url={https://arxiv.org/abs/2603.24703}
+}
